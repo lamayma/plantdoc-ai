@@ -121,7 +121,7 @@
   .hero-grid{
     position:relative;z-index:1;
     display:grid;
-    grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);
+    grid-template-columns:minmax(0,.92fr) minmax(360px,1.08fr);
     gap:clamp(22px,4vw,56px);
     align-items:center;
   }
@@ -225,7 +225,7 @@
   .dropzone{
     position:relative;
     aspect-ratio:16 / 11;
-    min-height:280px;
+    min-height:320px;
     margin:16px 16px 0;
     border:1px dashed rgba(255,255,255,.12);
     border-radius:20px;
@@ -237,6 +237,29 @@
   .dropzone:hover{border-color:rgba(155,227,110,.28)}
   .dropzone.over{border-color:rgba(155,227,110,.36);background:rgba(155,227,110,.06)}
   .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .dropzone-art{
+    position:absolute;inset:14px;
+    border-radius:18px;
+    overflow:hidden;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+    background:
+      linear-gradient(180deg, rgba(6,11,8,.08), rgba(6,11,8,.42)),
+      url('./plantdoc-hero.png') center/cover no-repeat;
+    filter:saturate(1.04) contrast(1.02);
+  }
+  .dropzone-art::after{
+    content:'Пример снимка';
+    position:absolute;left:14px;top:14px;
+    padding:7px 10px;
+    border-radius:999px;
+    background:rgba(5,9,7,.64);
+    border:1px solid rgba(255,255,255,.08);
+    color:var(--green2);
+    font-size:.72rem;
+    text-transform:uppercase;
+    letter-spacing:.06em;
+  }
   .dropzone .preview{
     position:absolute;inset:0;
     width:100%;height:100%;
@@ -244,6 +267,7 @@
     display:none;
   }
   .dropzone.has-preview .preview{display:block}
+  .dropzone.has-preview .dropzone-art{display:none}
   .dropzone .hint{
     position:absolute;inset:0;
     display:grid;place-items:center;
@@ -273,6 +297,18 @@
     color:var(--muted);
     font-size:.9rem;
     line-height:1.55;
+  }
+  .dropzone .hint strong{
+    display:inline-flex;
+    margin-bottom:2px;
+    padding:6px 10px;
+    border-radius:999px;
+    background:rgba(155,227,110,.08);
+    border:1px solid rgba(155,227,110,.16);
+    color:var(--green2);
+    font-size:.72rem;
+    letter-spacing:.06em;
+    text-transform:uppercase;
   }
   .file-meta{
     margin:12px 16px 0;
@@ -439,6 +475,7 @@
     .nav-links{display:none}
     .hero{padding-top:104px}
     .hero h1{font-size:clamp(2.8rem, 15vw, 4rem)}
+    .hero-grid{grid-template-columns:1fr}
     .dropzone{aspect-ratio:4 / 5;min-height:0}
     .hint-inner{max-width:240px;gap:10px}
     .hint h2{font-size:.98rem}
@@ -507,6 +544,7 @@
 
           <label class="dropzone" id="dropzone">
             <input type="file" id="fileInput" accept="image/*" />
+            <div class="dropzone-art" aria-hidden="true"></div>
             <img class="preview" id="previewImg" alt="Предпросмотр выбранного фото" />
             <div class="hint" id="hint">
               <div class="hint-inner">
@@ -518,6 +556,7 @@
                   </svg>
                 </div>
                 <div>
+                  <strong>Фото растения</strong>
                   <h2>Загрузи фото растения</h2>
                   <p>Перетащи изображение сюда или нажми на карточку. Лучше всего работает крупный кадр листа или стебля при дневном свете.</p>
                 </div>
