@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
 <meta charset="UTF-8" />
@@ -342,11 +342,89 @@
     display:none;
     margin:16px;
     border:1px solid rgba(255,255,255,.08);
-    background:rgba(5,9,7,.42);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.03), rgba(5,9,7,.38)),
+      rgba(5,9,7,.42);
     border-radius:18px;
     padding:16px;
   }
   .result.on{display:block}
+  .result[data-severity="ok"]{
+    background:linear-gradient(180deg, rgba(155,227,110,.10), rgba(5,9,7,.42));
+    border-color:rgba(155,227,110,.20);
+  }
+  .result[data-severity="warn"]{
+    background:linear-gradient(180deg, rgba(242,184,111,.10), rgba(5,9,7,.42));
+    border-color:rgba(242,184,111,.20);
+  }
+  .result[data-severity="danger"]{
+    background:linear-gradient(180deg, rgba(240,108,90,.12), rgba(5,9,7,.42));
+    border-color:rgba(240,108,90,.22);
+  }
+  .result-hero{
+    display:flex;align-items:flex-start;gap:14px;
+    margin-bottom:12px;
+  }
+  .result-icon{
+    width:44px;height:44px;border-radius:14px;
+    display:grid;place-items:center;
+    flex:0 0 auto;
+    font-size:1.2rem;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .result[data-severity="ok"] .result-icon{
+    background:rgba(155,227,110,.16);
+    border-color:rgba(155,227,110,.22);
+  }
+  .result[data-severity="warn"] .result-icon{
+    background:rgba(242,184,111,.14);
+    border-color:rgba(242,184,111,.22);
+  }
+  .result[data-severity="danger"] .result-icon{
+    background:rgba(240,108,90,.14);
+    border-color:rgba(240,108,90,.22);
+  }
+  .result-copy{display:grid;gap:5px;min-width:0}
+  .result-copy strong{
+    font-size:1.1rem;
+    letter-spacing:-.02em;
+    line-height:1.2;
+  }
+  .result-copy span{color:var(--muted);font-size:.84rem;line-height:1.45}
+  .result-badges{
+    display:flex;flex-wrap:wrap;gap:8px;
+    margin-top:10px;
+  }
+  .chip{
+    display:inline-flex;align-items:center;gap:8px;
+    min-height:30px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);
+    color:var(--text);
+    font-size:.76rem;
+    font-weight:700;
+    letter-spacing:.01em;
+  }
+  .chip::before{
+    content:'';
+    width:8px;height:8px;border-radius:50%;
+    background:currentColor;
+    box-shadow:0 0 0 4px rgba(255,255,255,.04);
+  }
+  .chip-fungal{color:#ffd38a;background:rgba(242,184,111,.12);border-color:rgba(242,184,111,.22)}
+  .chip-bacterial{color:#ffb7a8;background:rgba(240,108,90,.12);border-color:rgba(240,108,90,.22)}
+  .chip-viral{color:#d4e3ff;background:rgba(130,168,255,.12);border-color:rgba(130,168,255,.22)}
+  .chip-pest{color:#d8f56d;background:rgba(216,245,109,.10);border-color:rgba(216,245,109,.20)}
+  .chip-nutrient{color:#9fe7d1;background:rgba(106,208,192,.12);border-color:rgba(106,208,192,.22)}
+  .chip-watering{color:#9fc7ff;background:rgba(120,164,255,.12);border-color:rgba(120,164,255,.22)}
+  .chip-environmental{color:#c8d7c8;background:rgba(200,215,200,.10);border-color:rgba(200,215,200,.18)}
+  .chip-healthy{color:#d2f6b7;background:rgba(155,227,110,.12);border-color:rgba(155,227,110,.20)}
+  .chip-unknown{color:#d0d7d2;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.10)}
+  .chip-confidence{color:#f4f8f5;background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.10)}
   .result-top{
     display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
     margin-bottom:12px;
@@ -374,9 +452,9 @@
     gap:10px;
   }
   .result-box{
-    border:1px solid rgba(255,255,255,.06);
+    border:1px solid rgba(255,255,255,.07);
     border-radius:16px;
-    background:rgba(255,255,255,.02);
+    background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.015));
     padding:12px;
     min-height:88px;
   }
@@ -384,7 +462,7 @@
     font-size:.72rem;
     text-transform:uppercase;
     letter-spacing:.08em;
-    color:var(--soft);
+    color:#b3c8bb;
     margin-bottom:8px;
   }
   .result-text{
@@ -431,11 +509,25 @@
     gap:16px;
   }
   .card{
+    position:relative;
+    overflow:hidden;
     border:1px solid var(--line);
     background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
     border-radius:var(--radius);
     padding:18px;
   }
+  .card::before{
+    content:'';
+    position:absolute;inset:0 0 auto 0;height:4px;
+    background:linear-gradient(90deg, rgba(155,227,110,.7), rgba(255,255,255,0));
+    opacity:.85;
+  }
+  .tone-fungal{background:linear-gradient(180deg, rgba(242,184,111,.14), rgba(255,255,255,.015));border-color:rgba(242,184,111,.16)}
+  .tone-bacterial{background:linear-gradient(180deg, rgba(240,108,90,.14), rgba(255,255,255,.015));border-color:rgba(240,108,90,.16)}
+  .tone-viral{background:linear-gradient(180deg, rgba(130,168,255,.14), rgba(255,255,255,.015));border-color:rgba(130,168,255,.16)}
+  .tone-pest{background:linear-gradient(180deg, rgba(216,245,109,.12), rgba(255,255,255,.015));border-color:rgba(216,245,109,.16)}
+  .tone-nutrient{background:linear-gradient(180deg, rgba(106,208,192,.12), rgba(255,255,255,.015));border-color:rgba(106,208,192,.16)}
+  .tone-watering{background:linear-gradient(180deg, rgba(120,164,255,.12), rgba(255,255,255,.015));border-color:rgba(120,164,255,.16)}
   .card h4{margin:0 0 8px;font-size:1.02rem}
   .card p{margin:0;color:var(--muted);line-height:1.6}
   .card ul{
@@ -591,10 +683,14 @@
           </div>
 
           <div class="result" id="resultBox" aria-live="polite">
-            <div class="result-top">
-              <div class="result-name">
+            <div class="result-hero">
+              <div class="result-icon" id="resultIcon" aria-hidden="true">🌿</div>
+              <div class="result-copy">
                 <strong id="resultPlant">Готов к анализу</strong>
                 <span id="resultDisease">Загрузи фото, чтобы получить диагноз</span>
+                <div class="result-badges" id="resultBadges">
+                  <span class="chip chip-unknown">Ожидание</span>
+                </div>
               </div>
               <div class="severity sev-warn" id="resultSeverity">Ожидание</div>
             </div>
@@ -606,15 +702,15 @@
 
             <div class="result-grid" style="margin-top:12px">
               <div class="result-box">
-                <div class="result-label">Диагноз</div>
+                <div class="result-label">Что видно</div>
                 <div class="result-text" id="resultDiagnosis">Результат появится здесь после анализа.</div>
               </div>
               <div class="result-box">
-                <div class="result-label">Что делать</div>
+                <div class="result-label">Советы</div>
                 <div class="result-text" id="resultRecs">Советы по уходу появятся здесь.</div>
               </div>
               <div class="result-box" style="grid-column:1 / -1">
-                <div class="result-label">Срочность</div>
+                <div class="result-label">Что это значит</div>
                 <div class="result-text" id="resultUrgency">Нажми анализ, чтобы понять, насколько срочно действовать.</div>
               </div>
             </div>
@@ -634,8 +730,8 @@
         </div>
 
         <div class="cards">
-          <article class="card reveal d1">
-            <h4>Хлороз</h4>
+          <article class="card tone-nutrient reveal d1">
+            <h4>🍋 Хлороз</h4>
             <p>Листья светлеют, часто между жилками. Обычно это связано с нехваткой питания, проблемой с почвой или поливом.</p>
             <ul>
               <li>Желтизна между жилками</li>
@@ -643,8 +739,8 @@
               <li>Часто нужен пересмотр питания</li>
             </ul>
           </article>
-          <article class="card reveal d2">
-            <h4>Мучнистая роса</h4>
+          <article class="card tone-fungal reveal d2">
+            <h4>⚪ Мучнистая роса</h4>
             <p>На листьях и побегах появляется белый налёт, похожий на муку. Проблема быстро распространяется во влажной среде.</p>
             <ul>
               <li>Белые пятна и налёт</li>
@@ -652,8 +748,8 @@
               <li>Нужна изоляция и обработка</li>
             </ul>
           </article>
-          <article class="card reveal d3">
-            <h4>Пятнистость листьев</h4>
+          <article class="card tone-bacterial reveal d3">
+            <h4>🟤 Пятнистость листьев</h4>
             <p>Коричневые или чёрные пятна на листе часто говорят о грибке, стрессе или неправильном поливе.</p>
             <ul>
               <li>Тёмные пятна разного размера</li>
@@ -664,8 +760,8 @@
         </div>
 
         <div class="cards" style="margin-top:16px">
-          <article class="card reveal d1">
-            <h4>Паутинный клещ</h4>
+          <article class="card tone-pest reveal d1">
+            <h4>🕷️ Паутинный клещ</h4>
             <p>Листья покрываются мелкими светлыми точками, а между частями растения может появиться тонкая паутинка.</p>
             <ul>
               <li>Мелкое точечное повреждение</li>
@@ -673,8 +769,8 @@
               <li>Растение быстро теряет силу</li>
             </ul>
           </article>
-          <article class="card reveal d2">
-            <h4>Перелив и корневая гниль</h4>
+          <article class="card tone-watering reveal d2">
+            <h4>💧 Перелив и гниль</h4>
             <p>Листья вянут, хотя почва влажная. Это частая проблема, когда растению дают слишком много воды.</p>
             <ul>
               <li>Мягкие, поникшие листья</li>
@@ -682,8 +778,8 @@
               <li>Нужен контроль корней и дренажа</li>
             </ul>
           </article>
-          <article class="card reveal d3">
-            <h4>Солнечный ожог и стресс</h4>
+          <article class="card tone-viral reveal d3">
+            <h4>☀️ Ожог и стресс</h4>
             <p>Появляются светлые или бурые пятна после резкого солнца, холода, пересадки или смены места.</p>
             <ul>
               <li>Выжженные пятна</li>
@@ -783,21 +879,15 @@
   </footer>
 
   <script>
-    const ANALYZE_URL = 'https://bc2290cd39e810.lhr.life/api/generate';
-    const MODEL = 'llava-phi3';
+    const ANALYZE_URL = 'https://c5ee7fb506dcfb.lhr.life/api/generate';
+    const MODEL = 'moondream';
     const PROMPT = [
-      'Ты эксперт по болезням растений.',
-      'Посмотри на фото и дай короткий, честный диагноз.',
-      'Отвечай на русском и строго в таком формате:',
-      'РАСТЕНИЕ: ...',
-      'ПРОБЛЕМА: ...',
-      'СЕРЬЁЗНОСТЬ: ok | warn | danger',
-      'УВЕРЕННОСТЬ: 0-100',
-      'ДИАГНОЗ: 2-3 предложения о том, что видно на фото и почему это похоже на проблему.',
-      'ЧТО ДЕЛАТЬ: 3-5 коротких шагов, каждый с новой строки.',
-      'СРОЧНОСТЬ: ...',
-      'Если растение выглядит здоровым, так и скажи. Не выдумывай болезнь.'
-    ].join('\n');
+      'You are a plant care assistant.',
+      'Look at the photo and describe the visible condition in one short paragraph.',
+      'Use simple words and be honest if the plant looks fine.',
+      'Mention one likely issue if you see stress, yellowing, drooping, spots, pests, mold, or dryness.',
+      'Do not use JSON or bullet points.'
+    ].join(' ');
 
     const el = {
       fileInput: document.getElementById('fileInput'),
@@ -812,6 +902,8 @@
       resetBtn: document.getElementById('resetBtn'),
       clearTopBtn: document.getElementById('clearTopBtn'),
       resultBox: document.getElementById('resultBox'),
+      resultIcon: document.getElementById('resultIcon'),
+      resultBadges: document.getElementById('resultBadges'),
       resultPlant: document.getElementById('resultPlant'),
       resultDisease: document.getElementById('resultDisease'),
       resultSeverity: document.getElementById('resultSeverity'),
@@ -827,6 +919,117 @@
     let selectedBase64 = '';
     let analyzeCount = 0;
 
+    const CATEGORY_META = {
+      healthy: { icon: '🌿', label: 'Здоровое растение', chip: 'chip-healthy' },
+      fungal: { icon: '🍄', label: 'Грибковая проблема', chip: 'chip-fungal' },
+      bacterial: { icon: '🦠', label: 'Бактериальная инфекция', chip: 'chip-bacterial' },
+      viral: { icon: '🧬', label: 'Вирусный стресс', chip: 'chip-viral' },
+      pest: { icon: '🐛', label: 'Вредители', chip: 'chip-pest' },
+      nutrient: { icon: '💡', label: 'Дефицит питания', chip: 'chip-nutrient' },
+      watering: { icon: '💧', label: 'Полив или корни', chip: 'chip-watering' },
+      environmental: { icon: '🌤️', label: 'Стресс среды', chip: 'chip-environmental' },
+      unknown: { icon: '🌱', label: 'Нужна проверка', chip: 'chip-unknown' }
+    };
+
+    const CATEGORY_RULES = [
+      ['healthy', ['здоров', 'healthy', 'без проблем', 'норма']],
+      ['fungal', ['гриб', 'плесен', 'мучнист', 'ржавчин', 'фитофтор', 'гниль', 'пятнистост']],
+      ['bacterial', ['бактер']],
+      ['viral', ['вирус', 'мозаик']],
+      ['pest', ['клещ', 'тля', 'вредител', 'насеком', 'паути']],
+      ['nutrient', ['хлороз', 'дефицит', 'желез', 'магни', 'азот', 'калий', 'питани']],
+      ['watering', ['перелив', 'недолив', 'полив', 'корн', 'влага']],
+      ['environmental', ['ожог', 'солнц', 'жара', 'холод', 'стресс', 'температур']]
+    ];
+
+    const classifyCategory = (data) => {
+      const text = [data.plant_name, data.disease, data.diagnosis, data.recommendations, data.urgency]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      for (const [category, keywords] of CATEGORY_RULES) {
+        if (keywords.some((keyword) => text.includes(keyword))) return category;
+      }
+      return 'unknown';
+    };
+
+    const RECOMMENDATIONS_BY_CATEGORY = {
+      healthy: '1. Следи за поливом\n2. Дай рассеянный свет\n3. Осматривай листья раз в неделю',
+      fungal: '1. Убери сильно повреждённые листья\n2. Улучши проветривание\n3. Не опрыскивай по вечерам\n4. Изолируй растение при ухудшении',
+      bacterial: '1. Изолируй растение\n2. Удали мокнущие части\n3. Держи листья сухими\n4. Если пятна растут, обработай по инструкции',
+      viral: '1. Убери слабые листья\n2. Изолируй растение\n3. Не используй один инструмент на всех растениях\n4. Сравни с соседними растениями',
+      pest: '1. Осмотри нижнюю сторону листьев\n2. Протри листья\n3. Изолируй растение\n4. Повтори осмотр через 2-3 дня',
+      nutrient: '1. Проверь подкормку и pH\n2. Дай удобрение по инструкции\n3. Не перекармливай\n4. Сравни новые и старые листья',
+      watering: '1. Проверь влажность грунта\n2. Убедись, что лишняя вода уходит\n3. Не поливай по расписанию без проверки\n4. Проверь корни, если есть запах гнили',
+      environmental: '1. Убери от прямого солнца\n2. Защити от сквозняка\n3. Стабилизируй температуру\n4. Дай растению 2-3 дня на восстановление',
+      unknown: '1. Сделай фото крупнее\n2. Покажи лист сверху и снизу\n3. Добавь фото всего растения\n4. Повтори анализ при дневном свете'
+    };
+
+    const SUMMARY_BY_CATEGORY = {
+      healthy: 'Похоже, растение выглядит нормально.',
+      fungal: 'Похоже на грибковую проблему: пятна, налёт или гниль.',
+      bacterial: 'Похоже на бактериальное поражение или мокнущие пятна.',
+      viral: 'Похоже на вирусный стресс или мозаичность листьев.',
+      pest: 'Похоже на вредителей: клещей, тлю или следы укусов.',
+      nutrient: 'Похоже на дефицит питания: лист теряет цвет или желтеет.',
+      watering: 'Похоже на проблему с поливом или корнями.',
+      environmental: 'Похоже на стресс от света, температуры или сухого воздуха.',
+      unknown: 'По фото видно стресс, но точнее лучше проверить другим снимком.'
+    };
+
+    const translateRaw = (text, category) => {
+      const lower = text.toLowerCase();
+      if (category === 'healthy' || /healthy|fine|good|okay|no visible problem|looks fine/.test(lower)) {
+        return 'Растение выглядит в целом нормально, без явных тревожных признаков.';
+      }
+      if (category === 'watering' || /droop|wilt|wilting|dry|dehydr|water/.test(lower)) {
+        return 'Листья выглядят поникшими или суховатыми, поэтому это похоже на проблему с поливом или корнями.';
+      }
+      if (category === 'nutrient' || /yellow|yellowing|pale|chlorosis|nutrient|deficien/.test(lower)) {
+        return 'Лист теряет цвет или желтеет, это похоже на дефицит питания.';
+      }
+      if (category === 'fungal' || /spot|spots|fung|mold|mildew|rot|blotch/.test(lower)) {
+        return 'На листе заметны пятна или налёт, это похоже на грибковую проблему.';
+      }
+      if (category === 'pest' || /insect|pest|bug|mite|aphid|holes|chewed/.test(lower)) {
+        return 'Похоже, растение повреждают вредители.';
+      }
+      if (category === 'environmental' || /sun|sunlight|heat|cold|burn|scorch|stress|draft/.test(lower)) {
+        return 'Растение похоже на стресс от света, температуры или воздуха.';
+      }
+      return text ? 'На фото видно стресс, но точнее лучше сравнить с другим снимком.' : SUMMARY_BY_CATEGORY.unknown;
+    };
+
+    const makeSeverity = (text, category) => {
+      const lower = text.toLowerCase();
+      if (category === 'healthy' || /healthy|fine|good|okay|no visible problem|looks fine/.test(lower)) return 'ok';
+      if (/urgent|severe|bad|rotten|dead|critical|spreading fast|significant/.test(lower)) return 'danger';
+      if (category === 'unknown' && /cannot|not sure|unclear|hard to tell/.test(lower)) return 'warn';
+      return 'warn';
+    };
+
+    const makeConfidence = (text, category) => {
+      const lower = text.toLowerCase();
+      let score = category === 'healthy' ? 84 : 64;
+      if (/detailed|clear|visible|looks|appears/.test(lower)) score += 6;
+      if (/might|may|possibly|could/.test(lower)) score -= 8;
+      if (/healthy|fine|no visible problem/.test(lower)) score += 8;
+      return Math.max(32, Math.min(96, score));
+    };
+
+    const renderBadges = (data, category) => {
+      const sev = data.severity || 'warn';
+      const sevLabel = sev === 'ok' ? 'В норме' : sev === 'danger' ? 'Срочно' : 'Проверить';
+      const meta = CATEGORY_META[category] || CATEGORY_META.unknown;
+      const confidence = Math.max(0, Math.min(100, data.confidence || 0));
+      el.resultBadges.innerHTML = [
+        `<span class="chip ${meta.chip}">${meta.icon} ${meta.label}</span>`,
+        `<span class="chip ${sev === 'ok' ? 'chip-healthy' : sev === 'danger' ? 'chip-bacterial' : 'chip-fungal'}">${sevLabel}</span>`,
+        `<span class="chip chip-confidence">🎯 ${confidence}% уверенности</span>`
+      ].join('');
+      el.resultIcon.textContent = meta.icon;
+    };
+
     const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) entry.target.classList.add('in');
@@ -841,12 +1044,15 @@
 
     const clearResult = () => {
       el.resultBox.classList.remove('on');
+      el.resultBox.dataset.severity = 'warn';
       el.resultPlant.textContent = 'Готов к анализу';
       el.resultDisease.textContent = 'Загрузи фото, чтобы получить диагноз';
       el.resultSeverity.className = 'severity sev-warn';
       el.resultSeverity.textContent = 'Ожидание';
       el.confidenceLabel.textContent = 'Уверенность: 0%';
       el.confidenceBar.style.width = '0%';
+      el.resultIcon.textContent = '🌿';
+      el.resultBadges.innerHTML = '<span class="chip chip-unknown">Ожидание</span>';
       el.resultDiagnosis.textContent = 'Результат появится здесь после анализа.';
       el.resultRecs.textContent = 'Советы по уходу появятся здесь.';
       el.resultUrgency.textContent = 'Нажми анализ, чтобы понять, насколько срочно действовать.';
@@ -906,7 +1112,7 @@
 
     const parseTextResponse = (raw) => {
       const clean = raw.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
-      const labels = new Set(['РАСТЕНИЕ', 'ПРОБЛЕМА', 'СЕРЬЕЗНОСТЬ', 'УВЕРЕННОСТЬ', 'ДИАГНОЗ', 'ЧТО ДЕЛАТЬ', 'СРОЧНОСТЬ']);
+      const labels = new Set(['РАСТЕНИЕ', 'ПРОБЛЕМА', 'КАТЕГОРИЯ', 'СЕРЬЕЗНОСТЬ', 'УВЕРЕННОСТЬ', 'ДИАГНОЗ', 'ЧТО ДЕЛАТЬ', 'СРОЧНОСТЬ']);
       const values = {};
       let current = null;
 
@@ -928,11 +1134,21 @@
 
       const plant = values.РАСТЕНИЕ || 'Растение';
       const problem = values.ПРОБЛЕМА || 'Не удалось определить';
+      const categoryRaw = (values.КАТЕГОРИЯ || '').toLowerCase();
       const severityRaw = (values.СЕРЬЕЗНОСТЬ || 'warn').toLowerCase();
       const confidenceRaw = values.УВЕРЕННОСТЬ || '';
       const diagnosis = values.ДИАГНОЗ || clean || 'Не удалось извлечь диагноз из ответа модели.';
       const recs = values['ЧТО ДЕЛАТЬ'] || '';
       const urgency = values.СРОЧНОСТЬ || '';
+      const category = categoryRaw.includes('гриб') ? 'fungal'
+        : categoryRaw.includes('бактер') ? 'bacterial'
+        : categoryRaw.includes('вирус') ? 'viral'
+        : categoryRaw.includes('вредител') ? 'pest'
+        : categoryRaw.includes('пит') || categoryRaw.includes('дефиц') ? 'nutrient'
+        : categoryRaw.includes('полив') || categoryRaw.includes('корн') ? 'watering'
+        : categoryRaw.includes('стресс') || categoryRaw.includes('сред') ? 'environmental'
+        : categoryRaw.includes('здоров') ? 'healthy'
+        : undefined;
 
       const severity = severityRaw.includes('ok') || severityRaw.includes('здоров') ? 'ok'
         : severityRaw.includes('danger') || severityRaw.includes('опас') ? 'danger'
@@ -946,6 +1162,7 @@
       return {
         plant_name: plant,
         disease: problem,
+        category,
         severity,
         confidence,
         diagnosis,
@@ -954,12 +1171,42 @@
       };
     };
 
+    const parsePlainResponse = (raw) => {
+      const clean = raw.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
+      const category = classifyCategory({
+        disease: clean,
+        diagnosis: clean,
+        recommendations: clean,
+        urgency: clean
+      });
+      const severity = makeSeverity(clean, category);
+      const confidence = makeConfidence(clean, category);
+
+      return {
+        plant_name: 'Растение',
+        disease: SUMMARY_BY_CATEGORY[category] || SUMMARY_BY_CATEGORY.unknown,
+        category,
+        severity,
+        confidence,
+        diagnosis: translateRaw(clean, category),
+        recommendations: RECOMMENDATIONS_BY_CATEGORY[category] || RECOMMENDATIONS_BY_CATEGORY.unknown,
+        urgency: severity === 'danger' ? 'Нужно действовать как можно скорее' : severity === 'ok' ? 'Сейчас всё выглядит спокойно' : 'Стоит проверить растение в ближайшие дни'
+      };
+    };
+
+    const parseModelResponse = (raw) => {
+      if (/\bРАСТЕНИЕ\s*:/i.test(raw) || /\bПРОБЛЕМА\s*:/i.test(raw)) return parseTextResponse(raw);
+      return parsePlainResponse(raw);
+    };
+
     const setResult = (data) => {
       const sev = data.severity || 'warn';
       const sevLabel = sev === 'ok' ? 'Растение в норме' : sev === 'danger' ? 'Нужно срочно действовать' : 'Нужна проверка';
       const sevClass = sev === 'ok' ? 'sev-ok' : sev === 'danger' ? 'sev-danger' : 'sev-warn';
+      const category = data.category || classifyCategory(data);
 
       el.resultBox.classList.add('on');
+      el.resultBox.dataset.severity = sev;
       el.resultPlant.textContent = data.plant_name || 'Растение';
       el.resultDisease.textContent = data.disease || 'Диагноз сформирован';
       el.resultSeverity.className = `severity ${sevClass}`;
@@ -969,6 +1216,7 @@
       el.resultDiagnosis.textContent = data.diagnosis || '—';
       el.resultRecs.textContent = data.recommendations || '—';
       el.resultUrgency.textContent = data.urgency || '—';
+      renderBadges(data, category);
     };
 
     const analyze = async () => {
@@ -978,6 +1226,7 @@
       el.analyzeBtn.textContent = 'Анализирую...';
       setStatus('warn', 'Проверяю фото');
       el.resultBox.classList.add('on');
+      el.resultBox.dataset.severity = 'warn';
       el.resultPlant.textContent = 'Анализ';
       el.resultDisease.textContent = 'Идет обработка фото';
       el.resultSeverity.className = 'severity sev-warn';
@@ -1004,7 +1253,7 @@
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const payload = await resp.json();
         const raw = payload.response || payload.message?.content || '';
-        const parsed = raw.trim().startsWith('{') ? JSON.parse(raw) : parseTextResponse(raw);
+        const parsed = raw.trim().startsWith('{') ? JSON.parse(raw) : parseModelResponse(raw);
         setResult(parsed);
         setStatus('ok', analyzeCount > 1 ? 'Новый результат готов' : 'Анализ готов');
       } catch (error) {
@@ -1030,6 +1279,7 @@
       setResult({
         plant_name: 'Монстера',
         disease: 'Хлороз, вероятно дефицит железа',
+        category: 'nutrient',
         severity: 'warn',
         confidence: 91,
         diagnosis: 'Листья теряют насыщенность и светлеют между жилками, что похоже на хлороз. Для подтверждения нужен более детальный снимок, но симптоматика уже выглядит как нарушение питания.',
@@ -1060,3 +1310,4 @@
   </script>
 </body>
 </html>
+
