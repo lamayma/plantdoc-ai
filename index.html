@@ -3,77 +3,74 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>PlantDoc — локальная платформа диагностики растений</title>
-<meta name="description" content="PlantDoc — локальная система диагностики растений на Ollama и n8n. Без лишнего облака, с понятной архитектурой и готовым внешним доступом через туннель." />
+<title>PlantDoc — диагностика растений по фото</title>
+<meta name="description" content="PlantDoc анализирует фото растений локальной нейросетью и возвращает понятный диагноз, срочность и шаги ухода." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
 <style>
   :root{
-    --bg:#07100d;
-    --bg2:#0c1512;
-    --panel:#0f1916;
-    --panel2:#13211d;
+    --bg:#07110d;
+    --bg2:#0b1511;
+    --panel:rgba(10,18,15,.66);
+    --panel-strong:rgba(8,15,12,.88);
     --line:rgba(255,255,255,.08);
-    --line2:rgba(166,214,145,.18);
-    --text:#eef6f0;
-    --muted:#9ab0a4;
-    --soft:#6f8479;
+    --line-strong:rgba(170,221,141,.16);
+    --text:#f1f7f2;
+    --muted:#9cb1a5;
+    --soft:#6c8176;
     --green:#9be36e;
-    --green2:#b9f28f;
+    --green2:#c0f39a;
     --amber:#f2b86f;
-    --teal:#6ad0c0;
-    --shadow:0 28px 80px rgba(0,0,0,.38);
-    --radius:16px;
+    --danger:#f06c5a;
+    --shadow:0 30px 90px rgba(0,0,0,.42);
+    --radius:18px;
     --max:1180px;
   }
   *,*::before,*::after{box-sizing:border-box}
   html{scroll-behavior:smooth}
   body{
     margin:0;
-    background:
-      radial-gradient(1000px 700px at 80% 0%, rgba(155,227,110,.10), transparent 55%),
-      radial-gradient(800px 500px at 0% 20%, rgba(106,208,192,.08), transparent 60%),
-      linear-gradient(180deg, var(--bg), #050807 58%, #060908);
+    font-family:'Inter',system-ui,sans-serif;
     color:var(--text);
-    font-family:'Inter', system-ui, sans-serif;
-    line-height:1.55;
+    background:
+      radial-gradient(900px 600px at 85% 10%, rgba(155,227,110,.12), transparent 55%),
+      radial-gradient(700px 500px at 5% 30%, rgba(106,208,192,.08), transparent 58%),
+      linear-gradient(180deg, var(--bg), #050807 52%, #050706);
+    overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
     text-rendering:optimizeLegibility;
-    overflow-x:hidden;
   }
   a{color:inherit;text-decoration:none}
   button,input{font:inherit}
   ::selection{background:rgba(155,227,110,.24)}
-
   .wrap{max-width:var(--max);margin:0 auto;padding:0 clamp(18px,4vw,40px)}
   .eyebrow{
     display:inline-flex;align-items:center;gap:10px;
     padding:7px 12px;
-    border:1px solid var(--line2);
+    border:1px solid var(--line-strong);
     background:rgba(155,227,110,.08);
     border-radius:999px;
     color:var(--green2);
-    font-size:.78rem;
-    letter-spacing:.02em;
+    font-size:.74rem;
     text-transform:uppercase;
+    letter-spacing:.06em;
   }
   .eyebrow-dot{
     width:8px;height:8px;border-radius:50%;
     background:var(--green);
     box-shadow:0 0 0 6px rgba(155,227,110,.12);
-    flex:0 0 auto;
   }
 
   .nav{
     position:fixed;inset:0 0 auto 0;z-index:50;
-    border-bottom:1px solid rgba(255,255,255,.06);
     backdrop-filter:blur(18px) saturate(140%);
-    background:rgba(7,16,13,.68);
+    background:rgba(7,17,13,.72);
+    border-bottom:1px solid rgba(255,255,255,.06);
   }
   .nav-inner{
     min-height:72px;
-    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
   }
   .brand{
     display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:-.03em;
@@ -86,330 +83,367 @@
   .brand-copy{display:flex;flex-direction:column;gap:2px}
   .brand-copy span:first-child{font-size:1rem}
   .brand-copy span:last-child{font-size:.72rem;color:var(--muted);font-weight:500}
-  .nav-links{display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center}
-  .nav-links a{
-    color:var(--muted);
-    font-size:.9rem;
-    padding:8px 0;
-  }
+  .nav-links{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .nav-links a{font-size:.9rem;color:var(--muted)}
   .nav-links a:hover{color:var(--text)}
   .nav-cta{
     display:inline-flex;align-items:center;gap:10px;
     padding:11px 16px;
     border-radius:999px;
-    border:1px solid rgba(155,227,110,.24);
     background:rgba(155,227,110,.08);
-    color:var(--text);
+    border:1px solid rgba(155,227,110,.22);
     font-weight:700;
-    white-space:nowrap;
   }
-  .nav-cta:hover{background:rgba(155,227,110,.14)}
 
   .hero{
     min-height:100svh;
-    padding:116px 0 42px;
+    padding:112px 0 28px;
     position:relative;
+    overflow:hidden;
+  }
+  .hero-bg{
+    position:absolute;inset:0;
+    z-index:0;
+  }
+  .hero-bg img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+    filter:saturate(1.02) contrast(1.03);
+  }
+  .hero-bg::after{
+    content:'';
+    position:absolute;inset:0;
+    background:
+      linear-gradient(90deg, rgba(6,12,10,.92) 0%, rgba(6,12,10,.82) 36%, rgba(6,12,10,.44) 65%, rgba(6,12,10,.74) 100%),
+      linear-gradient(180deg, rgba(6,12,10,.18) 0%, transparent 34%, rgba(6,12,10,.28) 100%);
   }
   .hero-grid{
+    position:relative;z-index:1;
     display:grid;
     grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);
-    gap:clamp(24px,4vw,56px);
+    gap:clamp(22px,4vw,56px);
     align-items:center;
   }
-  .hero-copy{
-    position:relative;
-    z-index:1;
-    padding:16px 0 0;
-  }
+  .hero-copy{padding-top:12px}
   .hero h1{
     margin:18px 0 18px;
-    font-family:'Source Serif 4', serif;
-    font-size:clamp(3.3rem, 7vw, 6.2rem);
-    line-height:.95;
+    font-family:'Source Serif 4',serif;
+    font-size:clamp(3.2rem, 7vw, 6.1rem);
+    line-height:.94;
     letter-spacing:-.04em;
     font-weight:700;
   }
-  .hero h1 em{
-    color:var(--green2);
-    font-style:normal;
-  }
-  .hero p.lead{
-    max-width:600px;
+  .hero h1 em{font-style:normal;color:var(--green2)}
+  .lead{
     margin:0;
-    font-size:clamp(1.02rem, 1.4vw, 1.15rem);
+    max-width:620px;
     color:var(--muted);
+    font-size:clamp(1.03rem,1.4vw,1.16rem);
+    line-height:1.7;
   }
   .hero-actions{
-    display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+    display:flex;flex-wrap:wrap;gap:12px;
     margin-top:28px;
   }
   .btn{
-    display:inline-flex;align-items:center;gap:10px;
+    display:inline-flex;align-items:center;justify-content:center;gap:10px;
     min-height:48px;
     padding:0 18px;
     border-radius:14px;
     border:1px solid transparent;
     font-weight:700;
     transition:transform .2s ease, background .2s ease, border-color .2s ease;
-    will-change:transform;
+    cursor:pointer;
   }
   .btn:hover{transform:translateY(-1px)}
   .btn-primary{
-    background:linear-gradient(135deg, #b7f28f, #8bd96a);
-    color:#081008;
+    background:linear-gradient(135deg, #b8f28f, #8ad965);
+    color:#091109;
   }
   .btn-secondary{
     background:rgba(255,255,255,.03);
     border-color:rgba(255,255,255,.08);
     color:var(--text);
   }
-  .btn .arrow{font-size:1.05rem;line-height:1}
-
-  .hero-metrics{
-    display:grid;
-    grid-template-columns:repeat(3, minmax(0,1fr));
-    gap:12px;
-    margin-top:28px;
-  }
-  .metric{
-    border:1px solid var(--line);
-    background:rgba(255,255,255,.03);
-    border-radius:14px;
-    padding:14px 14px 13px;
-    min-height:92px;
-  }
-  .metric strong{
-    display:block;
-    font-size:1.08rem;
-    color:var(--text);
-    margin-bottom:7px;
-  }
-  .metric span{
-    display:block;
-    font-size:.82rem;
+  .btn-ghost{
+    background:transparent;
+    border-color:rgba(255,255,255,.08);
     color:var(--muted);
   }
-
-  .hero-visual{
-    position:relative;
-    min-height:620px;
-    border-radius:28px;
-    overflow:hidden;
-    border:1px solid rgba(255,255,255,.08);
-    box-shadow:var(--shadow);
-    background:linear-gradient(180deg, rgba(8,16,13,.2), rgba(8,16,13,.66));
+  .hero-points{
+    display:flex;flex-wrap:wrap;gap:10px;
+    margin-top:26px;
   }
-  .hero-visual img{
+  .point{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 12px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(255,255,255,.03);
+    color:var(--text);
+    font-size:.83rem;
+  }
+  .point i{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--green);
+    box-shadow:0 0 0 5px rgba(155,227,110,.12);
+    flex:0 0 auto;
+  }
+
+  .tool{
+    display:flex;
+    flex-direction:column;
+    border:1px solid rgba(255,255,255,.09);
+    background:var(--panel);
+    backdrop-filter:blur(18px);
+    border-radius:24px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+  .tool-head{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    padding:16px 18px;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    background:rgba(255,255,255,.02);
+  }
+  .tool-head strong{font-size:.98rem}
+  .status{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:.8rem;color:var(--muted);
+  }
+  .status-dot{
+    width:8px;height:8px;border-radius:50%;
+    background:#8b9398;
+    box-shadow:0 0 0 5px rgba(139,147,152,.12);
+  }
+  .status.ok{color:var(--green2)}
+  .status.ok .status-dot{background:var(--green);box-shadow:0 0 0 5px rgba(155,227,110,.12)}
+  .status.warn{color:var(--amber)}
+  .status.warn .status-dot{background:var(--amber);box-shadow:0 0 0 5px rgba(242,184,111,.12)}
+
+  .dropzone{
+    position:relative;
+    aspect-ratio:16 / 11;
+    min-height:280px;
+    margin:16px 16px 0;
+    border:1px dashed rgba(255,255,255,.12);
+    border-radius:20px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+    overflow:hidden;
+    cursor:pointer;
+  }
+  .dropzone:hover{border-color:rgba(155,227,110,.28)}
+  .dropzone.over{border-color:rgba(155,227,110,.36);background:rgba(155,227,110,.06)}
+  .dropzone input{position:absolute;inset:0;opacity:0;cursor:pointer}
+  .dropzone .preview{
     position:absolute;inset:0;
     width:100%;height:100%;
     object-fit:cover;
-    display:block;
-    filter:saturate(1.02) contrast(1.02);
+    display:none;
   }
-  .hero-visual::after{
-    content:'';
+  .dropzone.has-preview .preview{display:block}
+  .dropzone .hint{
     position:absolute;inset:0;
-    background:
-      linear-gradient(90deg, rgba(7,16,13,.90) 0%, rgba(7,16,13,.54) 28%, rgba(7,16,13,.10) 54%, rgba(7,16,13,.22) 100%),
-      linear-gradient(180deg, rgba(7,16,13,.16) 0%, transparent 22%, rgba(7,16,13,.24) 100%);
-    pointer-events:none;
+    display:grid;place-items:center;
+    padding:22px;
+    text-align:center;
   }
-  .hero-overlay{
-    position:absolute;inset:auto 20px 20px 20px;z-index:1;
+  .dropzone.has-preview .hint{background:linear-gradient(180deg, transparent, rgba(6,12,10,.30))}
+  .hint-inner{
+    max-width:320px;
     display:grid;gap:12px;
+    justify-items:center;
   }
-  .overlay-card{
-    max-width:280px;
-    border:1px solid rgba(255,255,255,.09);
-    background:rgba(10,16,13,.56);
-    backdrop-filter:blur(16px);
+  .upload-badge{
+    width:56px;height:56px;border-radius:18px;
+    display:grid;place-items:center;
+    background:rgba(155,227,110,.08);
+    border:1px solid rgba(155,227,110,.16);
+    color:var(--green2);
+  }
+  .hint h2{
+    margin:0;
+    font-size:1.02rem;
+    letter-spacing:-.02em;
+  }
+  .hint p{
+    margin:0;
+    color:var(--muted);
+    font-size:.9rem;
+    line-height:1.55;
+  }
+  .file-meta{
+    margin:12px 16px 0;
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+    color:var(--muted);
+    font-size:.82rem;
+  }
+  .tool-actions{
+    display:flex;gap:10px;flex-wrap:wrap;
+    padding:14px 16px 16px;
+  }
+  .tool-actions .btn{
+    flex:1 1 0;
+    min-width:0;
+  }
+  .tool-actions .btn[disabled]{
+    opacity:.5;
+    cursor:not-allowed;
+    transform:none;
+  }
+  .result{
+    display:none;
+    margin:16px;
+    border:1px solid rgba(255,255,255,.08);
+    background:rgba(5,9,7,.42);
     border-radius:18px;
-    padding:14px 15px;
+    padding:16px;
   }
-  .overlay-kicker{
+  .result.on{display:block}
+  .result-top{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:12px;
+    margin-bottom:12px;
+  }
+  .result-name{
+    display:grid;gap:4px;
+  }
+  .result-name strong{
+    font-size:1.05rem;
+    letter-spacing:-.02em;
+  }
+  .result-name span{color:var(--muted);font-size:.84rem}
+  .severity{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:8px 12px;border-radius:999px;
+    font-size:.8rem;font-weight:700;
+    white-space:nowrap;
+  }
+  .sev-ok{background:rgba(155,227,110,.10);color:var(--green2);border:1px solid rgba(155,227,110,.18)}
+  .sev-warn{background:rgba(242,184,111,.10);color:#f6cc90;border:1px solid rgba(242,184,111,.16)}
+  .sev-danger{background:rgba(240,108,90,.10);color:#ffb2a8;border:1px solid rgba(240,108,90,.16)}
+  .result-grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:10px;
+  }
+  .result-box{
+    border:1px solid rgba(255,255,255,.06);
+    border-radius:16px;
+    background:rgba(255,255,255,.02);
+    padding:12px;
+    min-height:88px;
+  }
+  .result-label{
     font-size:.72rem;
     text-transform:uppercase;
     letter-spacing:.08em;
-    color:var(--green2);
-    margin-bottom:7px;
+    color:var(--soft);
+    margin-bottom:8px;
   }
-  .overlay-card strong{display:block;font-size:.98rem;margin-bottom:5px}
-  .overlay-card span{display:block;font-size:.82rem;color:var(--muted)}
+  .result-text{
+    font-size:.92rem;
+    color:var(--text);
+    line-height:1.55;
+    white-space:pre-line;
+  }
+  .confidence{
+    display:flex;align-items:center;gap:10px;
+    margin-top:10px;
+    color:var(--muted);
+    font-size:.82rem;
+  }
+  .meter{
+    height:10px;flex:1;
+    border-radius:999px;
+    background:rgba(255,255,255,.06);
+    overflow:hidden;
+  }
+  .meter > span{
+    display:block;height:100%;
+    width:0%;
+    border-radius:inherit;
+    background:linear-gradient(90deg, #c1f39c, #8ad965);
+  }
 
-  .band{padding:28px 0 0}
   .section{
-    padding:84px 0 0;
+    padding:36px 0 0;
   }
   .section-head{
-    display:flex;align-items:flex-end;justify-content:space-between;gap:18px;flex-wrap:wrap;
+    display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
     margin-bottom:18px;
   }
-  .section-head h2{
+  .section-head h3{
     margin:0;
-    font-size:clamp(1.65rem, 2.2vw, 2.25rem);
+    font-size:clamp(1.4rem, 2vw, 2rem);
     letter-spacing:-.03em;
   }
-  .section-head p{
-    margin:0;
-    max-width:600px;
-    color:var(--muted);
-  }
-
-  .grid-3{
+  .section-head p{margin:0;max-width:620px;color:var(--muted)}
+  .cards{
     display:grid;
     grid-template-columns:repeat(3, minmax(0,1fr));
     gap:16px;
   }
-  .panel{
+  .card{
     border:1px solid var(--line);
     background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
     border-radius:var(--radius);
-    padding:20px;
-    min-height:190px;
+    padding:18px;
   }
-  .panel .tag{
-    display:inline-flex;
-    padding:4px 10px;
-    border-radius:999px;
-    border:1px solid rgba(155,227,110,.18);
-    color:var(--green2);
-    font-size:.72rem;
-    text-transform:uppercase;
-    letter-spacing:.05em;
-    margin-bottom:14px;
-  }
-  .panel h3{
-    margin:0 0 10px;
-    font-size:1.08rem;
-    letter-spacing:-.02em;
-  }
-  .panel p{margin:0;color:var(--muted)}
-  .panel ul{
+  .card h4{margin:0 0 8px;font-size:1.02rem}
+  .card p{margin:0;color:var(--muted);line-height:1.6}
+  .card ul{
     list-style:none;
     margin:14px 0 0;
     padding:0;
     display:grid;
     gap:10px;
   }
-  .panel li{
-    display:flex;align-items:flex-start;gap:10px;
+  .card li{
+    display:flex;gap:10px;align-items:flex-start;
     color:var(--text);
     font-size:.92rem;
   }
-  .panel li::before{
+  .card li::before{
     content:'';
     width:8px;height:8px;border-radius:50%;
-    margin-top:.48em;
     background:var(--green);
-    box-shadow:0 0 0 4px rgba(155,227,110,.10);
+    margin-top:.52em;
     flex:0 0 auto;
-  }
-
-  .flow{
-    display:grid;
-    grid-template-columns:repeat(4, minmax(0,1fr));
-    gap:14px;
-    counter-reset: step;
-  }
-  .step{
-    border:1px solid var(--line);
-    border-radius:18px;
-    background:rgba(255,255,255,.03);
-    padding:18px;
-    min-height:172px;
-    position:relative;
-  }
-  .step::before{
-    counter-increment: step;
-    content: counter(step, decimal-leading-zero);
-    position:absolute;
-    right:16px;top:14px;
-    font-size:.72rem;
-    color:var(--soft);
-    letter-spacing:.08em;
-  }
-  .step strong{display:block;font-size:1rem;margin:36px 0 8px}
-  .step span{display:block;color:var(--muted);font-size:.9rem}
-  .step .line{
-    position:absolute;left:18px;top:18px;width:42px;height:2px;background:linear-gradient(90deg, var(--green), transparent)
-  }
-
-  .stack{
-    display:grid;
-    grid-template-columns:repeat(2, minmax(0,1fr));
-    gap:16px;
-  }
-  .stack-list{
-    border:1px solid var(--line);
-    border-radius:var(--radius);
-    overflow:hidden;
-  }
-  .stack-row{
-    display:grid;
-    grid-template-columns:minmax(140px,.9fr) minmax(0,1.1fr) auto;
-    gap:12px;
-    align-items:center;
-    padding:15px 18px;
-    background:rgba(255,255,255,.025);
-    border-top:1px solid rgba(255,255,255,.06);
-  }
-  .stack-row:first-child{border-top:0}
-  .stack-row strong{font-size:.92rem}
-  .stack-row span{color:var(--muted);font-size:.88rem}
-  .pill{
-    display:inline-flex;align-items:center;justify-content:center;
-    padding:6px 10px;border-radius:999px;
-    background:rgba(155,227,110,.08);
-    border:1px solid rgba(155,227,110,.16);
-    color:var(--green2);
-    font-size:.72rem;
-    white-space:nowrap;
-  }
-
-  .callout{
-    border:1px solid rgba(255,255,255,.08);
-    background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
-    border-radius:24px;
-    padding:24px;
-  }
-  .callout h3{
-    margin:0 0 10px;
-    font-size:1.12rem;
-  }
-  .callout p{margin:0;color:var(--muted)}
-  .callout .meta{
-    display:flex;flex-wrap:wrap;gap:10px;
-    margin-top:16px;
+    box-shadow:0 0 0 4px rgba(155,227,110,.10);
   }
 
   .footer{
-    padding:40px 0 54px;
+    padding:38px 0 54px;
     color:var(--soft);
     font-size:.88rem;
   }
   .footer-inner{
     border-top:1px solid rgba(255,255,255,.06);
     padding-top:18px;
-    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+    display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   }
 
   .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease}
   .reveal.in{opacity:1;transform:none}
-  .d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}.d4{transition-delay:.32s}
+  .d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
 
   @media (max-width: 980px){
-    .hero-grid{grid-template-columns:1fr}
-    .hero-visual{min-height:460px}
-    .grid-3,.flow,.stack{grid-template-columns:1fr}
-    .hero-metrics{grid-template-columns:1fr}
+    .hero-grid,.cards{grid-template-columns:1fr}
+    .hero-visual{min-height:420px}
+    .result-grid{grid-template-columns:1fr}
   }
   @media (max-width: 720px){
     .nav-inner{gap:10px}
     .nav-links{display:none}
     .hero{padding-top:104px}
-    .hero h1{font-size:clamp(2.8rem, 16vw, 4rem)}
-    .hero-visual{min-height:380px}
-    .stack-row{grid-template-columns:1fr;gap:8px}
+    .hero h1{font-size:clamp(2.8rem, 15vw, 4rem)}
+    .dropzone{aspect-ratio:4 / 5;min-height:0}
+    .hint-inner{max-width:240px;gap:10px}
+    .hint h2{font-size:.98rem}
+    .hint p{font-size:.86rem}
+    .tool-actions .btn{flex:1 1 100%}
   }
   @media (prefers-reduced-motion: reduce){
     html{scroll-behavior:auto}
@@ -425,231 +459,466 @@
         <div class="brand-mark" aria-hidden="true"></div>
         <div class="brand-copy">
           <span>PlantDoc</span>
-          <span>Local AI for plant diagnostics</span>
+          <span>Диагностика растений по фото</span>
         </div>
       </a>
-      <nav class="nav-links" aria-label="Primary">
-        <a href="#platform">Платформа</a>
-        <a href="#flow">Поток</a>
-        <a href="#stack">Стек</a>
-        <a href="ARCHITECTURE.html">Архитектура</a>
+      <nav class="nav-links" aria-label="Навигация">
+        <a href="#analyze">Анализ</a>
+        <a href="#features">Почему</a>
+        <a href="#faq">FAQ</a>
       </nav>
-      <a class="nav-cta" href="#stack">Открыть стек <span class="arrow">→</span></a>
+      <a class="nav-cta" href="#analyze">Загрузить фото</a>
     </div>
   </header>
 
   <main id="top">
     <section class="hero">
+      <div class="hero-bg" aria-hidden="true">
+        <img src="./plantdoc-hero.png" alt="" />
+      </div>
       <div class="wrap hero-grid">
         <div class="hero-copy reveal in">
-          <span class="eyebrow"><span class="eyebrow-dot"></span> local-first • n8n • ollama • vercel</span>
+          <span class="eyebrow"><span class="eyebrow-dot"></span> быстрый анализ фото</span>
           <h1>PlantDoc<em>.</em></h1>
           <p class="lead">
-            Локальная платформа для диагностики растений и оркестрации сценариев.
-            n8n ведёт автоматизацию, Ollama работает на твоем компьютере, а внешний доступ
-            можно аккуратно добрать через Cloudflared без лишней облачной связки.
+            Загрузи фото растения, нажми анализ и получи понятный диагноз:
+            что похоже не так, насколько это срочно и что делать дальше.
+            Интерфейс держит все ключевые шаги на одном экране, чтобы не заставлять пользователя разбираться в лишних деталях.
           </p>
+
           <div class="hero-actions">
-            <a class="btn btn-primary" href="#platform">Посмотреть платформу <span class="arrow">→</span></a>
-            <a class="btn btn-secondary" href="ARCHITECTURE.html">Открыть архитектуру</a>
+            <a class="btn btn-primary" href="#analyze">Начать анализ</a>
+            <button class="btn btn-secondary" id="demoBtn" type="button">Показать пример</button>
+            <button class="btn btn-ghost" id="clearTopBtn" type="button">Сбросить</button>
           </div>
-          <div class="hero-metrics">
-            <div class="metric">
-              <strong>Локальная обработка</strong>
-              <span>Данные остаются на твоем компьютере, пока ты сам не отдашь их наружу.</span>
-            </div>
-            <div class="metric">
-              <strong>Гибкая оркестрация</strong>
-              <span>n8n собирает сценарии вокруг Telegram, базы и API без ручной рутины.</span>
-            </div>
-            <div class="metric">
-              <strong>Подключаемый доступ</strong>
-              <span>Cloudflared можно включить позже, когда понадобится стабильный внешний URL.</span>
-            </div>
+
+          <div class="hero-points">
+            <div class="point"><i></i> Фото и результат без лишних шагов</div>
+            <div class="point"><i></i> Понятные рекомендации по уходу</div>
+            <div class="point"><i></i> Подходит для быстрого осмотра перед лечением</div>
           </div>
         </div>
 
-        <div class="hero-visual reveal d2">
-          <img src="./plantdoc-hero.png" alt="PlantDoc hero visual" />
-          <div class="hero-overlay">
-            <div class="overlay-card">
-              <div class="overlay-kicker">Current runtime</div>
-              <strong>Ollama + llava-phi3</strong>
-              <span>Локальный inference на машине пользователя, без облачного шага в середине.</span>
+        <div class="tool reveal d2" id="analyze">
+          <div class="tool-head">
+            <strong>Анализ фото</strong>
+            <span class="status warn" id="runtimeStatus"><span class="status-dot"></span><span>Сервис проверяется</span></span>
+          </div>
+
+          <label class="dropzone" id="dropzone">
+            <input type="file" id="fileInput" accept="image/*" />
+            <img class="preview" id="previewImg" alt="Предпросмотр выбранного фото" />
+            <div class="hint" id="hint">
+              <div class="hint-inner">
+                <div class="upload-badge" aria-hidden="true">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v12" />
+                    <path d="m7 8 5-5 5 5" />
+                    <path d="M4 15.5V19a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3.5" />
+                  </svg>
+                </div>
+                <div>
+                  <h2>Загрузи фото растения</h2>
+                  <p>Перетащи изображение сюда или нажми на карточку. Лучше всего работает крупный кадр листа или стебля при дневном свете.</p>
+                </div>
+              </div>
             </div>
-            <div class="overlay-card" style="margin-left:auto">
-              <div class="overlay-kicker">Pipeline</div>
-              <strong>n8n → SQLite → UI</strong>
-              <span>Результаты можно собирать в управляемый поток и отдавать в интерфейс или Telegram.</span>
+          </label>
+
+          <div class="file-meta">
+            <span id="fileName">Файл не выбран</span>
+            <span id="fileSize">До 20 МБ</span>
+          </div>
+
+          <div class="tool-actions">
+            <button class="btn btn-primary" id="analyzeBtn" type="button" disabled>Анализировать</button>
+            <button class="btn btn-secondary" id="sampleBtn" type="button">Пример</button>
+            <button class="btn btn-ghost" id="resetBtn" type="button">Очистить</button>
+          </div>
+
+          <div class="result" id="resultBox" aria-live="polite">
+            <div class="result-top">
+              <div class="result-name">
+                <strong id="resultPlant">Готов к анализу</strong>
+                <span id="resultDisease">Загрузи фото, чтобы получить диагноз</span>
+              </div>
+              <div class="severity sev-warn" id="resultSeverity">Ожидание</div>
+            </div>
+
+            <div class="confidence">
+              <span id="confidenceLabel">Уверенность: 0%</span>
+              <div class="meter" aria-hidden="true"><span id="confidenceBar"></span></div>
+            </div>
+
+            <div class="result-grid" style="margin-top:12px">
+              <div class="result-box">
+                <div class="result-label">Диагноз</div>
+                <div class="result-text" id="resultDiagnosis">Результат появится здесь после анализа.</div>
+              </div>
+              <div class="result-box">
+                <div class="result-label">Что делать</div>
+                <div class="result-text" id="resultRecs">Советы по уходу появятся здесь.</div>
+              </div>
+              <div class="result-box" style="grid-column:1 / -1">
+                <div class="result-label">Срочность</div>
+                <div class="result-text" id="resultUrgency">Нажми анализ, чтобы понять, насколько срочно действовать.</div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="band" id="platform">
-      <div class="wrap section">
-        <div class="section-head reveal">
-          <div>
-            <span class="eyebrow"><span class="eyebrow-dot"></span> platform overview</span>
-            <h2>Платформа собрана вокруг понятной локальной логики.</h2>
-          </div>
-          <p>Сайт больше не притворяется фото-галереей. Он показывает саму систему, ее назначение и места, где можно наращивать функциональность.</p>
-        </div>
-
-        <div class="grid-3">
-          <article class="panel reveal d1">
-            <span class="tag">local runtime</span>
-            <h3>Смысл в локальности</h3>
-            <p>PlantDoc работает рядом с данными и не заставляет двигать фото через лишние промежуточные сервисы. Это упрощает контроль и отладку.</p>
-            <ul>
-              <li>Ollama запускается на твоем ПК.</li>
-              <li>n8n держит сценарии и вебхуки.</li>
-              <li>SQLite подходит для быстрых прототипов и журналов.</li>
-            </ul>
-          </article>
-
-          <article class="panel reveal d2">
-            <span class="tag">automation</span>
-            <h3>n8n как управляющий слой</h3>
-            <p>Вместо сложной ручной логики сайт опирается на n8n: там проще менять маршруты, добавлять ветки и собирать новые ответы.</p>
-            <ul>
-              <li>Webhook для входящих запросов.</li>
-              <li>Хранение и выборка результатов.</li>
-              <li>Переиспользуемые workflow-связки.</li>
-            </ul>
-          </article>
-
-          <article class="panel reveal d3">
-            <span class="tag">deployment</span>
-            <h3>Доступ без лишней магии</h3>
-            <p>Vercel уже держит витрину, а Cloudflared можно добавить, когда понадобится стабильный внешний адрес для локального runtime.</p>
-            <ul>
-              <li>Статический фронт без лишних зависимостей.</li>
-              <li>Локальный прокси для Ollama.</li>
-              <li>Отдельный канал для внешнего доступа.</li>
-            </ul>
-          </article>
         </div>
       </div>
     </section>
-
-    <section class="section" id="flow">
+    <section class="section" id="features">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
-            <span class="eyebrow"><span class="eyebrow-dot"></span> request flow</span>
-            <h2>Поток запроса читается с первого взгляда.</h2>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> как это помогает</span>
+            <h3>Человек видит не схему, а быстрый и понятный ответ по растению.</h3>
           </div>
-          <p>Когда картинка или событие попадает в систему, каждый шаг выполняет одну задачу и не тащит за собой лишний интерфейс.</p>
+          <p>Интерфейс собран вокруг одного сценария: быстро загрузить фото, увидеть вероятную проблему и сразу понять следующий шаг.</p>
         </div>
 
-        <div class="flow">
-          <div class="step reveal d1">
-            <div class="line"></div>
-            <strong>Вход</strong>
-            <span>Запрос приходит из сайта, Telegram или другого внешнего источника, который уже умеет говорить с вебхуком.</span>
-          </div>
-          <div class="step reveal d2">
-            <div class="line"></div>
-            <strong>Оркестрация</strong>
-            <span>n8n раскладывает данные по веткам, готовит payload и передает его в локальные сервисы без ручного вмешательства.</span>
-          </div>
-          <div class="step reveal d3">
-            <div class="line"></div>
-            <strong>Inference</strong>
-            <span>Ollama отвечает за локальный анализ и выдает результат в том формате, который удобнее дальше обработать.</span>
-          </div>
-          <div class="step reveal d4">
-            <div class="line"></div>
-            <strong>Результат</strong>
-            <span>UI или бот получают финальный ответ, а история остается в SQLite и может быть показана или скрыта по нужному сценарию.</span>
-          </div>
+        <div class="cards">
+          <article class="card reveal d1">
+            <h4>Диагностика по фото</h4>
+            <p>Модель смотрит на изображение и возвращает краткий диагноз с акцентом на видимые симптомы.</p>
+            <ul>
+              <li>Пятна, увядание, пожелтение, налёт</li>
+              <li>Повреждения листьев и следы стресса</li>
+              <li>Признаки полива, света и дефицитов</li>
+            </ul>
+          </article>
+
+          <article class="card reveal d2">
+            <h4>Понятный UX</h4>
+            <p>Пользователь загружает фото, нажимает одну кнопку и сразу видит ответ с уровнем срочности и шагами ухода.</p>
+            <ul>
+              <li>Одна понятная кнопка вместо лишних экранов</li>
+              <li>Результат показывается прямо в карточке</li>
+              <li>Поддержка drag and drop</li>
+            </ul>
+          </article>
+
+          <article class="card reveal d3">
+            <h4>Приватность</h4>
+            <p>Фото обрабатывается локально через твой собственный стек, без лишней зависимости от сторонних сервисов в интерфейсе.</p>
+            <ul>
+              <li>Фокус на пользовательском результате</li>
+              <li>Понятный статус анализа</li>
+              <li>Можно развивать историю и сравнение снимков</li>
+            </ul>
+          </article>
         </div>
       </div>
     </section>
-
-    <section class="section" id="stack">
+    <section class="section" id="faq">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
-            <span class="eyebrow"><span class="eyebrow-dot"></span> stack & status</span>
-            <h2>Точки сборки сейчас выглядят так.</h2>
-          </div>
-          <p>Это не рекламный список. Это рабочая карта того, что уже есть, и где еще можно навести порядок.</p>
-        </div>
-
-        <div class="stack">
-          <div class="stack-list reveal d1">
-            <div class="stack-row">
-              <strong>index.html</strong>
-              <span>Витрина проекта, текущая посадочная страница и точка входа для визуальной части.</span>
-              <span class="pill">updated</span>
-            </div>
-            <div class="stack-row">
-              <strong>proxy/server.js</strong>
-              <span>CORS-прокси для локального Ollama на `127.0.0.1:11434` через `11435`.</span>
-              <span class="pill">local</span>
-            </div>
-            <div class="stack-row">
-              <strong>n8n-workflow.json</strong>
-              <span>Webhook, обработка ответа модели, SQLite и возврат данных в интерфейс.</span>
-              <span class="pill">automation</span>
-            </div>
-            <div class="stack-row">
-              <strong>vercel.json</strong>
-              <span>Статический деплой с rewrites и базовыми заголовками для фронта.</span>
-              <span class="pill">deploy</span>
-            </div>
-          </div>
-
-          <div class="callout reveal d2">
-            <span class="eyebrow"><span class="eyebrow-dot"></span> next step</span>
-            <h3>Cloudflared добавим как постоянный внешний слой.</h3>
-            <p>
-              Когда туннель стабилизируется, можно будет один раз закрепить адрес,
-              убрать ручные подмены URL и собрать более предсказуемую схему доступа к локальным сервисам.
-            </p>
-            <div class="meta">
-              <span class="pill">stable URL</span>
-              <span class="pill">local services</span>
-              <span class="pill">no extra cloud logic</span>
-            </div>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> FAQ</span>
+            <h3>Короткие ответы на частые вопросы.</h3>
           </div>
         </div>
-      </div>
-    </section>
 
-    <section class="section">
-      <div class="wrap">
-        <div class="callout reveal">
-          <span class="eyebrow"><span class="eyebrow-dot"></span> note</span>
-          <h3>Сайт теперь показывает систему, а не отдельный шаг загрузки фото.</h3>
-          <p>
-            Это делает первый экран чище, убирает визуальный шум и позволяет сосредоточиться на
-            архитектуре, локальном runtime и следующем этапе интеграции.
-          </p>
+        <div class="cards">
+          <article class="card reveal d1">
+            <h4>Что нужно для анализа?</h4>
+            <p>Только фотография растения. Лучше делать снимок при хорошем дневном свете и не слишком далеко от объекта.</p>
+          </article>
+          <article class="card reveal d2">
+            <h4>Почему ответ может быть неточным?</h4>
+            <p>Качество снимка сильно влияет на результат. Чем чётче лист и чем меньше шумов в кадре, тем полезнее вывод.</p>
+          </article>
+          <article class="card reveal d3">
+            <h4>Что можно улучшить дальше?</h4>
+            <p>Можно добавить историю анализов, сравнение снимков, рекомендации по видам растений и более сильную модель распознавания.</p>
+          </article>
         </div>
       </div>
     </section>
   </main>
-
   <footer class="footer">
     <div class="wrap footer-inner">
-      <div>PlantDoc · local-first diagnostics</div>
-      <div>Ollama · n8n · SQLite · Vercel · Cloudflared</div>
+      <div>PlantDoc · диагностика растений по фото</div>
+      <div>Быстрый анализ и понятные советы</div>
     </div>
   </footer>
 
   <script>
-    const reveals = document.querySelectorAll('.reveal');
-    const io = new IntersectionObserver((entries) => {
+    const ANALYZE_URL = 'https://bc2290cd39e810.lhr.life/api/generate';
+    const MODEL = 'llava-phi3';
+    const PROMPT = [
+      'Ты эксперт по болезням растений.',
+      'Посмотри на фото и дай короткий, честный диагноз.',
+      'Отвечай на русском и строго в таком формате:',
+      'РАСТЕНИЕ: ...',
+      'ПРОБЛЕМА: ...',
+      'СЕРЬЁЗНОСТЬ: ok | warn | danger',
+      'УВЕРЕННОСТЬ: 0-100',
+      'ДИАГНОЗ: 2-3 предложения о том, что видно на фото и почему это похоже на проблему.',
+      'ЧТО ДЕЛАТЬ: 3-5 коротких шагов, каждый с новой строки.',
+      'СРОЧНОСТЬ: ...',
+      'Если растение выглядит здоровым, так и скажи. Не выдумывай болезнь.'
+    ].join('\n');
+
+    const el = {
+      fileInput: document.getElementById('fileInput'),
+      dropzone: document.getElementById('dropzone'),
+      previewImg: document.getElementById('previewImg'),
+      hint: document.getElementById('hint'),
+      fileName: document.getElementById('fileName'),
+      fileSize: document.getElementById('fileSize'),
+      analyzeBtn: document.getElementById('analyzeBtn'),
+      sampleBtn: document.getElementById('sampleBtn'),
+      demoBtn: document.getElementById('demoBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      clearTopBtn: document.getElementById('clearTopBtn'),
+      resultBox: document.getElementById('resultBox'),
+      resultPlant: document.getElementById('resultPlant'),
+      resultDisease: document.getElementById('resultDisease'),
+      resultSeverity: document.getElementById('resultSeverity'),
+      confidenceLabel: document.getElementById('confidenceLabel'),
+      confidenceBar: document.getElementById('confidenceBar'),
+      resultDiagnosis: document.getElementById('resultDiagnosis'),
+      resultRecs: document.getElementById('resultRecs'),
+      resultUrgency: document.getElementById('resultUrgency'),
+      runtimeStatus: document.getElementById('runtimeStatus')
+    };
+
+    let selectedFile = null;
+    let selectedBase64 = '';
+    let analyzeCount = 0;
+
+    const observer = new IntersectionObserver((entries) => {
       for (const entry of entries) {
         if (entry.isIntersecting) entry.target.classList.add('in');
       }
     }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach((node) => observer.observe(node));
 
-    reveals.forEach(el => io.observe(el));
+    const setStatus = (state, text) => {
+      el.runtimeStatus.className = `status ${state}`;
+      el.runtimeStatus.innerHTML = `<span class="status-dot"></span><span>${text}</span>`;
+    };
+
+    const clearResult = () => {
+      el.resultBox.classList.remove('on');
+      el.resultPlant.textContent = 'Готов к анализу';
+      el.resultDisease.textContent = 'Загрузи фото, чтобы получить диагноз';
+      el.resultSeverity.className = 'severity sev-warn';
+      el.resultSeverity.textContent = 'Ожидание';
+      el.confidenceLabel.textContent = 'Уверенность: 0%';
+      el.confidenceBar.style.width = '0%';
+      el.resultDiagnosis.textContent = 'Результат появится здесь после анализа.';
+      el.resultRecs.textContent = 'Советы по уходу появятся здесь.';
+      el.resultUrgency.textContent = 'Нажми анализ, чтобы понять, насколько срочно действовать.';
+    };
+
+    const resetAll = () => {
+      selectedFile = null;
+      selectedBase64 = '';
+      el.fileInput.value = '';
+      el.previewImg.removeAttribute('src');
+      el.dropzone.classList.remove('has-preview', 'over');
+      el.hint.style.display = '';
+      el.fileName.textContent = 'Файл не выбран';
+      el.fileSize.textContent = 'До 20 МБ';
+      el.analyzeBtn.disabled = true;
+      clearResult();
+    };
+
+    const loadImage = (file) => {
+      if (!file || !file.type.startsWith('image/')) return;
+      selectedFile = file;
+      el.fileName.textContent = file.name;
+      el.fileSize.textContent = `${(file.size / 1048576).toFixed(1)} МБ`;
+      el.dropzone.classList.add('has-preview');
+      el.hint.style.display = 'none';
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        el.previewImg.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+
+      const img = new Image();
+      img.onload = () => {
+        const max = 1024;
+        let w = img.width;
+        let h = img.height;
+        if (w > max || h > max) {
+          if (w > h) {
+            h = Math.round(h * max / w);
+            w = max;
+          } else {
+            w = Math.round(w * max / h);
+            h = max;
+          }
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        selectedBase64 = canvas.toDataURL('image/jpeg', 0.86).split(',')[1];
+        el.analyzeBtn.disabled = false;
+        setStatus('ok', 'Фото готово к анализу');
+      };
+      img.src = URL.createObjectURL(file);
+    };
+
+    const parseTextResponse = (raw) => {
+      const clean = raw.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
+      const labels = new Set(['РАСТЕНИЕ', 'ПРОБЛЕМА', 'СЕРЬЕЗНОСТЬ', 'УВЕРЕННОСТЬ', 'ДИАГНОЗ', 'ЧТО ДЕЛАТЬ', 'СРОЧНОСТЬ']);
+      const values = {};
+      let current = null;
+
+      for (const rawLine of clean.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        const match = line.match(/^([A-ZА-ЯЁ][A-ZА-ЯЁ\s-]{2,32})\s*:\s*(.*)$/u);
+        if (match) {
+          const key = match[1].trim();
+          if (labels.has(key)) {
+            current = key;
+            values[current] = match[2].trim();
+            continue;
+          }
+        }
+        if (current && line) {
+          values[current] = values[current] ? `${values[current]}\n${line}` : line;
+        }
+      }
+
+      const plant = values.РАСТЕНИЕ || 'Растение';
+      const problem = values.ПРОБЛЕМА || 'Не удалось определить';
+      const severityRaw = (values.СЕРЬЕЗНОСТЬ || 'warn').toLowerCase();
+      const confidenceRaw = values.УВЕРЕННОСТЬ || '';
+      const diagnosis = values.ДИАГНОЗ || clean || 'Не удалось извлечь диагноз из ответа модели.';
+      const recs = values['ЧТО ДЕЛАТЬ'] || '';
+      const urgency = values.СРОЧНОСТЬ || '';
+
+      const severity = severityRaw.includes('ok') || severityRaw.includes('здоров') ? 'ok'
+        : severityRaw.includes('danger') || severityRaw.includes('опас') ? 'danger'
+        : 'warn';
+
+      const confidence = Math.max(0, Math.min(100, parseInt(confidenceRaw, 10) || (severity === 'ok' ? 84 : severity === 'danger' ? 76 : 58)));
+      const recommendations = recs
+        ? recs.split(/\n+/).map((s) => s.replace(/^[-*•\d.\s]+/, '').trim()).filter(Boolean).join('\n')
+        : '1. Сделайте более чёткое фото\n2. Покажите обе стороны листа\n3. Добавьте фото всего растения';
+
+      return {
+        plant_name: plant,
+        disease: problem,
+        severity,
+        confidence,
+        diagnosis,
+        recommendations,
+        urgency
+      };
+    };
+
+    const setResult = (data) => {
+      const sev = data.severity || 'warn';
+      const sevLabel = sev === 'ok' ? 'Растение в норме' : sev === 'danger' ? 'Нужно срочно действовать' : 'Нужна проверка';
+      const sevClass = sev === 'ok' ? 'sev-ok' : sev === 'danger' ? 'sev-danger' : 'sev-warn';
+
+      el.resultBox.classList.add('on');
+      el.resultPlant.textContent = data.plant_name || 'Растение';
+      el.resultDisease.textContent = data.disease || 'Диагноз сформирован';
+      el.resultSeverity.className = `severity ${sevClass}`;
+      el.resultSeverity.textContent = sevLabel;
+      el.confidenceLabel.textContent = `Уверенность: ${Math.max(0, Math.min(100, data.confidence || 0))}%`;
+      el.confidenceBar.style.width = `${Math.max(0, Math.min(100, data.confidence || 0))}%`;
+      el.resultDiagnosis.textContent = data.diagnosis || '—';
+      el.resultRecs.textContent = data.recommendations || '—';
+      el.resultUrgency.textContent = data.urgency || '—';
+    };
+
+    const analyze = async () => {
+      if (!selectedBase64) return;
+      analyzeCount += 1;
+      el.analyzeBtn.disabled = true;
+      el.analyzeBtn.textContent = 'Анализирую...';
+      setStatus('warn', 'Проверяю фото');
+      el.resultBox.classList.add('on');
+      el.resultPlant.textContent = 'Анализ';
+      el.resultDisease.textContent = 'Идет обработка фото';
+      el.resultSeverity.className = 'severity sev-warn';
+      el.resultSeverity.textContent = 'В работе';
+      el.resultDiagnosis.textContent = 'Модель анализирует изображение. Обычно это занимает несколько секунд.';
+      el.resultRecs.textContent = 'Подожди, пока появится результат.';
+      el.resultUrgency.textContent = '...';
+      el.confidenceLabel.textContent = 'Уверенность: 0%';
+      el.confidenceBar.style.width = '0%';
+
+      try {
+        const resp = await fetch(ANALYZE_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: MODEL,
+            stream: false,
+            prompt: PROMPT,
+            images: [selectedBase64],
+            options: { temperature: 0.2, num_predict: 550 }
+          })
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const payload = await resp.json();
+        const raw = payload.response || payload.message?.content || '';
+        const parsed = raw.trim().startsWith('{') ? JSON.parse(raw) : parseTextResponse(raw);
+        setResult(parsed);
+        setStatus('ok', analyzeCount > 1 ? 'Новый результат готов' : 'Анализ готов');
+      } catch (error) {
+        setStatus('warn', 'Не удалось связаться с моделью');
+        setResult({
+          plant_name: 'Растение',
+          disease: 'Не удалось получить ответ',
+          severity: 'warn',
+          confidence: 0,
+          diagnosis: 'Сервис анализа сейчас недоступен. Попробуй снова чуть позже.',
+          recommendations: '1. Попробуй обновить страницу\n2. Повтори анализ через минуту\n3. Если ошибка повторяется, проверь сервис анализа',
+          urgency: 'Нужен повторный запуск анализа'
+        });
+      } finally {
+        el.analyzeBtn.disabled = !selectedBase64;
+        el.analyzeBtn.textContent = 'Анализировать';
+      }
+    };
+
+    const demoFill = () => {
+      el.resultBox.classList.add('on');
+      setStatus('ok', 'Демо-режим');
+      setResult({
+        plant_name: 'Монстера',
+        disease: 'Хлороз, вероятно дефицит железа',
+        severity: 'warn',
+        confidence: 91,
+        diagnosis: 'Листья теряют насыщенность и светлеют между жилками, что похоже на хлороз. Для подтверждения нужен более детальный снимок, но симптоматика уже выглядит как нарушение питания.',
+        recommendations: '1. Проверь pH почвы\n2. Добавь хелат железа\n3. Не переливай растение\n4. Повтори снимок через несколько дней',
+        urgency: 'Проверить в ближайшие 2–3 дня'
+      });
+      el.resultSeverity.textContent = 'Требует внимания';
+      el.resultSeverity.className = 'severity sev-warn';
+    };
+
+    el.fileInput.addEventListener('change', () => loadImage(el.fileInput.files?.[0]));
+    el.dropzone.addEventListener('dragover', (e) => { e.preventDefault(); el.dropzone.classList.add('over'); });
+    el.dropzone.addEventListener('dragleave', () => el.dropzone.classList.remove('over'));
+    el.dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      el.dropzone.classList.remove('over');
+      loadImage(e.dataTransfer.files?.[0]);
+    });
+    el.analyzeBtn.addEventListener('click', analyze);
+    el.sampleBtn.addEventListener('click', demoFill);
+    el.demoBtn.addEventListener('click', demoFill);
+    el.resetBtn.addEventListener('click', resetAll);
+    el.clearTopBtn.addEventListener('click', resetAll);
+
+    setStatus('ok', 'Готов к анализу');
+
+    clearResult();
   </script>
 </body>
 </html>
