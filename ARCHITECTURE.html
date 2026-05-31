@@ -163,7 +163,7 @@ pre{
   <div class="header-text">
     <div class="breadcrumb">PlantDoctor System</div>
     <h1>Архитектура системы</h1>
-    <p style="margin-top:6px">Telegram Bot · n8n Workflows · GPT-4 Vision · SQLite · Website</p>
+    <p style="margin-top:6px">Telegram Bot · n8n Workflows · Local Ollama Vision · SQLite · Website</p>
     <span class="ver-tag">v1.0 · Май 2026</span>
   </div>
 </div>
@@ -183,7 +183,7 @@ pre{
     <div class="flow-arrow">→</div>
     <div class="flow-node node-n8n"><div class="icon">💾</div><div class="label">n8n: Сохранить</div><div class="sublabel">Диск + SQLite</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">GPT-4 Vision</div><div class="sublabel">Анализ болезни</div></div>
+    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">Ollama Vision</div><div class="sublabel">Анализ болезни</div></div>
     <div class="flow-arrow">→</div>
     <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">Запись в БД</div><div class="sublabel">Диагноз + фото</div></div>
     <div class="flow-arrow">→</div>
@@ -211,7 +211,7 @@ pre{
     <div class="flow-arrow">→</div>
     <div class="flow-node node-n8n"><div class="icon">🔀</div><div class="label">Тот же воркфлоу</div><div class="sublabel">что и Telegram</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">GPT-4 Vision</div><div class="sublabel">Анализ</div></div>
+    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">Ollama Vision</div><div class="sublabel">Анализ</div></div>
     <div class="flow-arrow">→</div>
     <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">БД + сайт</div><div class="sublabel">Обновление</div></div>
   </div>
@@ -248,8 +248,8 @@ pre{
 
     <div class="arch-block ab-ai">
       <div class="block-icon">🧠</div>
-      <h3>GPT-4 Vision</h3>
-      <p>Анализирует фото растений. Определяет вид, болезнь, серьёзность, даёт рекомендации.</p>
+      <h3>Local Ollama Vision</h3>
+      <p>Анализирует фото растений локально. Определяет вид, болезнь, серьёзность, даёт рекомендации.</p>
       <div style="margin-top:12px">
         <span class="tag tag-ai">OpenAI API</span>
         <span class="tag tag-ai">Vision model</span>
@@ -306,7 +306,7 @@ pre{
         <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Telegram Trigger</div><div class="wf-desc">Слушает входящие сообщения с фото от пользователей бота.</div><div class="wf-node">Нода: Telegram Trigger → тип: message</div></div></div>
         <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">Получить файл</div><div class="wf-desc">Скачать фото с серверов Telegram через getFile API.</div><div class="wf-node">Нода: HTTP Request → GET Telegram file</div></div></div>
         <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Сохранить в хранилище</div><div class="wf-desc">Записать результат анализа и метаданные в локальную базу.</div><div class="wf-node">Нода: SQLite / File Storage</div></div></div>
-        <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">GPT-4 Vision анализ</div><div class="wf-desc">Отправить фото в OpenAI с системным промптом диагностики.</div><div class="wf-node">Нода: OpenAI → model: gpt-4o</div></div></div>
+        <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">Ollama vision анализ</div><div class="wf-desc">Отправить фото в локальную модель с системным промптом диагностики.</div><div class="wf-node">Нода: OpenAI-compatible request → local Ollama</div></div></div>
         <div class="wf-step"><div class="wf-num">5</div><div class="wf-content"><div class="wf-title">Парсить текстовый ответ</div><div class="wf-desc">Извлечь: plant_name, disease, severity, confidence, recommendations.</div><div class="wf-node">Нода: Set → text parse</div></div></div>
         <div class="wf-step"><div class="wf-num">6</div><div class="wf-content"><div class="wf-title">Сохранить в SQLite</div><div class="wf-desc">INSERT в таблицу diagnoses с source и show_on_site.</div><div class="wf-node">Нода: SQLite → INSERT</div></div></div>
         <div class="wf-step"><div class="wf-num">7</div><div class="wf-content"><div class="wf-title">Ответить пользователю</div><div class="wf-desc">Отправить отформатированный диагноз обратно в Telegram.</div><div class="wf-node">Нода: Telegram → sendMessage</div></div></div>
@@ -328,7 +328,7 @@ pre{
       <div class="wf-list">
         <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook POST /plant-analyze</div><div class="wf-desc">Получает фото как base64 или binary payload.</div><div class="wf-node">Нода: Webhook → POST</div></div></div>
         <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">Извлечь изображение</div><div class="wf-desc">Нормализовать вход и подготовить payload для Ollama.</div><div class="wf-node">Нода: Code</div></div></div>
-        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">llava-phi3 анализ</div><div class="wf-desc">Локальная модель отвечает текстовым диагнозом с полями.</div><div class="wf-node">Нода: HTTP Request → localhost:11434</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">moondream анализ</div><div class="wf-desc">Локальная модель отвечает текстовым описанием по фото.</div><div class="wf-node">Нода: HTTP Request → localhost:11434</div></div></div>
       </div>
     </div>
   </div>
