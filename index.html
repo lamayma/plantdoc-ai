@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>PlantDoc — диагностика растений по фото</title>
-<meta name="description" content="PlantDoc анализирует фото растений локальной нейросетью и возвращает понятный диагноз, срочность и шаги ухода." />
+<meta name="description" content="PlantDoc помогает загрузить фото растения, понять, что с ним не так, и получить простые советы по уходу." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,600;8..60,700&display=swap" rel="stylesheet" />
@@ -79,6 +79,15 @@
     width:36px;height:36px;border-radius:12px;flex:0 0 auto;
     background:linear-gradient(145deg, #0f281c, #1d5a34 58%, #c8f39b);
     box-shadow:0 10px 30px rgba(155,227,110,.16);
+    display:grid;
+    place-items:center;
+    overflow:hidden;
+  }
+  .brand-mark svg{
+    width:20px;
+    height:20px;
+    display:block;
+    color:#eff9e8;
   }
   .brand-copy{display:flex;flex-direction:column;gap:2px}
   .brand-copy span:first-child{font-size:1rem}
@@ -96,8 +105,8 @@
   }
 
   .hero{
-    min-height:100svh;
-    padding:112px 0 28px;
+    min-height:92svh;
+    padding:112px 0 18px;
     position:relative;
     overflow:hidden;
   }
@@ -404,7 +413,7 @@
   }
 
   .section{
-    padding:36px 0 0;
+    padding:54px 0 0;
   }
   .section-head{
     display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;
@@ -493,15 +502,22 @@
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="#top" aria-label="PlantDoc">
-        <div class="brand-mark" aria-hidden="true"></div>
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 21c-4.2 0-7.5-3.2-7.5-7.2C4.5 8.9 8 4.9 12 3c4 1.9 7.5 5.9 7.5 10.8 0 4-3.3 7.2-7.5 7.2Z" />
+            <path d="M12 18V6" />
+            <path d="M12 12c2.4-2.2 4.6-3 6.6-3.2" />
+          </svg>
+        </div>
         <div class="brand-copy">
           <span>PlantDoc</span>
           <span>Диагностика растений по фото</span>
         </div>
       </a>
       <nav class="nav-links" aria-label="Навигация">
-        <a href="#analyze">Анализ</a>
-        <a href="#features">Почему</a>
+        <a href="#knowledge">База знаний</a>
+        <a href="#how">Как понять</a>
+        <a href="#photo">Как снять</a>
         <a href="#faq">FAQ</a>
       </nav>
       <a class="nav-cta" href="#analyze">Загрузить фото</a>
@@ -518,9 +534,8 @@
           <span class="eyebrow"><span class="eyebrow-dot"></span> быстрый анализ фото</span>
           <h1>PlantDoc<em>.</em></h1>
           <p class="lead">
-            Загрузи фото растения, нажми анализ и получи понятный диагноз:
-            что похоже не так, насколько это срочно и что делать дальше.
-            Интерфейс держит все ключевые шаги на одном экране, чтобы не заставлять пользователя разбираться в лишних деталях.
+            Загрузи фото растения, нажми анализ и получи понятный ответ: что похоже не так, насколько это срочно и что делать дальше.
+            Без лишних терминов и сложных экранов — только фото, результат и простые шаги.
           </p>
 
           <div class="hero-actions">
@@ -607,70 +622,154 @@
         </div>
       </div>
     </section>
-    <section class="section" id="features">
+    
+    <section class="section" id="knowledge">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
-            <span class="eyebrow"><span class="eyebrow-dot"></span> как это помогает</span>
-            <h3>Человек видит не схему, а быстрый и понятный ответ по растению.</h3>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> база знаний</span>
+            <h3>Какие проблемы умеет распознавать PlantDoc</h3>
           </div>
-          <p>Интерфейс собран вокруг одного сценария: быстро загрузить фото, увидеть вероятную проблему и сразу понять следующий шаг.</p>
+          <p>Сайт объясняет результат простым языком: что видно на листе, почему это похоже на проблему и с чего начать уход.</p>
         </div>
 
         <div class="cards">
           <article class="card reveal d1">
-            <h4>Диагностика по фото</h4>
-            <p>Модель смотрит на изображение и возвращает краткий диагноз с акцентом на видимые симптомы.</p>
+            <h4>Хлороз</h4>
+            <p>Листья светлеют, часто между жилками. Обычно это связано с нехваткой питания, проблемой с почвой или поливом.</p>
             <ul>
-              <li>Пятна, увядание, пожелтение, налёт</li>
-              <li>Повреждения листьев и следы стресса</li>
-              <li>Признаки полива, света и дефицитов</li>
+              <li>Желтизна между жилками</li>
+              <li>Слабый рост и бледные листья</li>
+              <li>Часто нужен пересмотр питания</li>
             </ul>
           </article>
-
           <article class="card reveal d2">
-            <h4>Понятный UX</h4>
-            <p>Пользователь загружает фото, нажимает одну кнопку и сразу видит ответ с уровнем срочности и шагами ухода.</p>
+            <h4>Мучнистая роса</h4>
+            <p>На листьях и побегах появляется белый налёт, похожий на муку. Проблема быстро распространяется во влажной среде.</p>
             <ul>
-              <li>Одна понятная кнопка вместо лишних экранов</li>
-              <li>Результат показывается прямо в карточке</li>
-              <li>Поддержка drag and drop</li>
+              <li>Белые пятна и налёт</li>
+              <li>Поражает молодые листья</li>
+              <li>Нужна изоляция и обработка</li>
             </ul>
           </article>
-
           <article class="card reveal d3">
-            <h4>Приватность</h4>
-            <p>Фото обрабатывается локально через твой собственный стек, без лишней зависимости от сторонних сервисов в интерфейсе.</p>
+            <h4>Пятнистость листьев</h4>
+            <p>Коричневые или чёрные пятна на листе часто говорят о грибке, стрессе или неправильном поливе.</p>
             <ul>
-              <li>Фокус на пользовательском результате</li>
-              <li>Понятный статус анализа</li>
-              <li>Можно развивать историю и сравнение снимков</li>
+              <li>Тёмные пятна разного размера</li>
+              <li>Края листа могут сохнуть</li>
+              <li>Важно убрать повреждённые листья</li>
+            </ul>
+          </article>
+        </div>
+
+        <div class="cards" style="margin-top:16px">
+          <article class="card reveal d1">
+            <h4>Паутинный клещ</h4>
+            <p>Листья покрываются мелкими светлыми точками, а между частями растения может появиться тонкая паутинка.</p>
+            <ul>
+              <li>Мелкое точечное повреждение</li>
+              <li>Тонкая паутинка</li>
+              <li>Растение быстро теряет силу</li>
+            </ul>
+          </article>
+          <article class="card reveal d2">
+            <h4>Перелив и корневая гниль</h4>
+            <p>Листья вянут, хотя почва влажная. Это частая проблема, когда растению дают слишком много воды.</p>
+            <ul>
+              <li>Мягкие, поникшие листья</li>
+              <li>Почва остаётся сырой</li>
+              <li>Нужен контроль корней и дренажа</li>
+            </ul>
+          </article>
+          <article class="card reveal d3">
+            <h4>Солнечный ожог и стресс</h4>
+            <p>Появляются светлые или бурые пятна после резкого солнца, холода, пересадки или смены места.</p>
+            <ul>
+              <li>Выжженные пятна</li>
+              <li>Сильная реакция на смену условий</li>
+              <li>Лучше переставить растение в мягкий свет</li>
             </ul>
           </article>
         </div>
       </div>
     </section>
+
+    <section class="section" id="how">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> как понять результат</span>
+            <h3>Сначала смотри на срочность, потом на совет по уходу</h3>
+          </div>
+          <p>PlantDoc показывает не просто название проблемы, а короткое объяснение, чтобы человек сразу понял, что делать прямо сейчас.</p>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal d1">
+            <h4>Диагноз</h4>
+            <p>Это краткий вывод по фото: что именно модель заметила на растении и на что это похоже.</p>
+          </article>
+          <article class="card reveal d2">
+            <h4>Срочность</h4>
+            <p>Показывает, нужно ли действовать сегодня, в ближайшие дни или можно просто наблюдать.</p>
+          </article>
+          <article class="card reveal d3">
+            <h4>Что делать</h4>
+            <p>Ниже даются понятные шаги: полив, свет, обработка, пересадка или повторный снимок для проверки.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="photo">
+      <div class="wrap">
+        <div class="section-head reveal">
+          <div>
+            <span class="eyebrow"><span class="eyebrow-dot"></span> как снять</span>
+            <h3>Как сделать фото, чтобы анализ был полезнее</h3>
+          </div>
+          <p>Чем лучше видно лист, стебель или поражённую часть, тем полезнее результат. Это самый важный шаг перед анализом.</p>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal d1">
+            <h4>Снимай крупно</h4>
+            <p>Не делай слишком общий кадр. Лучше показать лист или часть растения, где заметна проблема.</p>
+          </article>
+          <article class="card reveal d2">
+            <h4>Используй дневной свет</h4>
+            <p>При хорошем свете видно больше деталей, а модель меньше путается в тенях и шуме.</p>
+          </article>
+          <article class="card reveal d3">
+            <h4>Сделай 2–3 снимка</h4>
+            <p>Полезно загрузить несколько ракурсов: общий вид растения, крупный план и обратную сторону листа.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+    
     <section class="section" id="faq">
       <div class="wrap">
         <div class="section-head reveal">
           <div>
             <span class="eyebrow"><span class="eyebrow-dot"></span> FAQ</span>
-            <h3>Короткие ответы на частые вопросы.</h3>
+            <h3>Частые вопросы</h3>
           </div>
         </div>
 
         <div class="cards">
           <article class="card reveal d1">
             <h4>Что нужно для анализа?</h4>
-            <p>Только фотография растения. Лучше делать снимок при хорошем дневном свете и не слишком далеко от объекта.</p>
+            <p>Достаточно одного фото растения. Лучше, если лист хорошо виден и на нём не слишком много бликов.</p>
           </article>
           <article class="card reveal d2">
-            <h4>Почему ответ может быть неточным?</h4>
-            <p>Качество снимка сильно влияет на результат. Чем чётче лист и чем меньше шумов в кадре, тем полезнее вывод.</p>
+            <h4>Что делать, если ответ выглядит слишком общим?</h4>
+            <p>Сделай более близкий снимок, покажи поражённую часть и попробуй ещё раз. Качество фото сильно влияет на результат.</p>
           </article>
           <article class="card reveal d3">
-            <h4>Что можно улучшить дальше?</h4>
-            <p>Можно добавить историю анализов, сравнение снимков, рекомендации по видам растений и более сильную модель распознавания.</p>
+            <h4>Когда стоит обратиться к специалисту?</h4>
+            <p>Если состояние быстро ухудшается, листья массово желтеют, вянут или есть признаки гнили, лучше не тянуть с осмотром.</p>
           </article>
         </div>
       </div>
@@ -679,7 +778,7 @@
   <footer class="footer">
     <div class="wrap footer-inner">
       <div>PlantDoc · диагностика растений по фото</div>
-      <div>Быстрый анализ и понятные советы</div>
+      <div>Понятный анализ, советы и база знаний</div>
     </div>
   </footer>
 
