@@ -1,0 +1,253 @@
+{
+  "name": "PlantDoc — Диагностика растений",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "plant-analyze",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-analyze",
+      "name": "Webhook — Получить фото",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "plant-analyze"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Извлекаем base64 из входящего запроса\n// Сайт шлёт multipart/form-data с полями: photo (файл) и/или base64\nconst body = $input.first().json.body || {};\nconst binaryData = $input.first().binary || {};\n\nlet base64Image = '';\nlet mimeType = 'image/jpeg';\n\n// Пробуем взять файл из binary\nif (binaryData.photo && binaryData.photo.data) {\n  base64Image = binaryData.photo.data;\n  mimeType = binaryData.photo.mimeType || 'image/jpeg';\n} else if (body.base64) {\n  // Или берём base64 из поля\n  base64Image = body.base64.replace(/^data:image\\/[a-z]+;base64,/, '');\n}\n\nif (!base64Image) {\n  throw new Error('Нет изображения в запросе');\n}\n\nreturn [{\n  json: {\n    base64: base64Image,\n    mimeType: mimeType,\n    source: body.source || 'website',\n    timestamp: body.timestamp || new Date().toISOString()\n  }\n}];"
+      },
+      "id": "code-extract",
+      "name": "Извлечь изображение",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:11434/api/generate",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llava-phi3\",\n  \"stream\": false,\n  \"prompt\": \"You are an expert botanist and plant pathologist. Analyze this plant image carefully.\\n\\nReturn ONLY valid JSON (no markdown, no explanation outside JSON):\\n{\\n  \\\"plant_name\\\": \\\"scientific and common name if identifiable, else 'Unknown plant'\\\",\\n  \\\"disease\\\": \\\"disease or problem name in Russian\\\",\\n  \\\"disease_category\\\": \\\"fungal | bacterial | viral | pest | nutrient | watering | environmental | healthy\\\",\\n  \\\"severity\\\": \\\"ok | warn | danger\\\",\\n  \\\"confidence\\\": 85,\\n  \\\"diagnosis\\\": \\\"2-3 sentences describing what you see and what it means, in Russian\\\",\\n  \\\"recommendations\\\": \\\"numbered list of 3-5 concrete steps in Russian\\\",\\n  \\\"urgency\\\": \\\"urgency level in Russian\\\",\\n  \\\"show_on_site\\\": true\\n}\",\n  \"images\": [\"{{ $json.base64 }}\"],\n  \"options\": {\n    \"temperature\": 0.3,\n    \"num_predict\": 600\n  }\n}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "ollama-vision",
+      "name": "llava-phi3 — Анализ",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Парсим JSON-ответ от llava-phi3\nconst raw = $input.first().json.response || '';\n\nlet parsed = {};\ntry {\n  // GPT/Ollama иногда оборачивает JSON в ```json ... ```\n  const cleaned = raw\n    .replace(/```json\\n?/g, '')\n    .replace(/```\\n?/g, '')\n    .trim();\n  \n  // Ищем JSON-объект в ответе\n  const match = cleaned.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    parsed = JSON.parse(match[0]);\n  } else {\n    throw new Error('JSON not found');\n  }\n} catch(e) {\n  // Если парсинг не удался — делаем базовый результат\n  parsed = {\n    plant_name: 'Растение',\n    disease: 'Не удалось определить',\n    disease_category: 'unknown',\n    severity: 'warn',\n    confidence: 50,\n    diagnosis: 'Нейросеть не смогла однозначно определить проблему. Попробуйте сделать более чёткое фото поражённого места.',\n    recommendations: '1. Сделайте фото крупным планом\\n2. Убедитесь в хорошем освещении\\n3. Сфотографируйте обе стороны листа',\n    urgency: 'Повторите с более чётким фото',\n    show_on_site: false\n  };\n}\n\nconst prevData = $('Извлечь изображение').first().json;\n\nreturn [{\n  json: {\n    ...parsed,\n    source: prevData.source || 'website',\n    timestamp: prevData.timestamp || new Date().toISOString(),\n    raw_response: raw\n  }\n}];"
+      },
+      "id": "code-parse",
+      "name": "Парсить ответ Ollama",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "CREATE TABLE IF NOT EXISTS diagnoses (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  plant_name TEXT,\n  disease TEXT,\n  disease_category TEXT,\n  severity TEXT DEFAULT 'ok',\n  confidence INTEGER DEFAULT 0,\n  diagnosis TEXT,\n  recommendations TEXT,\n  urgency TEXT,\n  source TEXT DEFAULT 'website',\n  show_on_site BOOLEAN DEFAULT 1,\n  img_base64 TEXT,\n  created_at DATETIME DEFAULT CURRENT_TIMESTAMP\n);\nINSERT INTO diagnoses (plant_name, disease, disease_category, severity, confidence, diagnosis, recommendations, urgency, source, show_on_site, img_base64)\nVALUES (\n  '{{ $json.plant_name }}',\n  '{{ $json.disease }}',\n  '{{ $json.disease_category }}',\n  '{{ $json.severity }}',\n  {{ $json.confidence }},\n  '{{ $json.diagnosis.replace(/'/g, \"''\") }}',\n  '{{ $json.recommendations.replace(/'/g, \"''\") }}',\n  '{{ $json.urgency }}',\n  '{{ $json.source }}',\n  {{ $json.show_on_site ? 1 : 0 }},\n  '{{ $('Извлечь изображение').first().json.base64.substring(0, 500) }}'\n);\nSELECT last_insert_rowid() as id;",
+        "options": {}
+      },
+      "id": "sqlite-insert",
+      "name": "Сохранить в SQLite",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [1120, 300],
+      "credentials": {
+        "sqlite": {
+          "id": "sqlite-plantdoc",
+          "name": "PlantDoc DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Формируем красивый ответ для сайта\nconst diagnosis = $('Парсить ответ Ollama').first().json;\nconst dbRow = $input.first().json;\n\nconst sevEmoji = { ok: '✅', warn: '⚠️', danger: '🚨' }[diagnosis.severity] || '⚠️';\n\nreturn [{\n  json: {\n    id: dbRow.id || Date.now(),\n    plant_name: diagnosis.plant_name,\n    disease: diagnosis.disease,\n    disease_category: diagnosis.disease_category,\n    severity: diagnosis.severity,\n    confidence: diagnosis.confidence,\n    diagnosis: diagnosis.diagnosis,\n    recommendations: diagnosis.recommendations,\n    urgency: diagnosis.urgency,\n    statusLabel: diagnosis.disease,\n    status: diagnosis.severity,\n    date: new Date().toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),\n    icon: sevEmoji,\n    show_on_site: diagnosis.show_on_site,\n    _source: 'analysis-complete'\n  }\n}];"
+      },
+      "id": "code-response",
+      "name": "Сформировать ответ",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1340, 300]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "id": "respond-analyze",
+      "name": "Ответить сайту",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1560, 300]
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "plant-photos",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "webhook-photos",
+      "name": "Webhook — Список фото",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 560],
+      "webhookId": "plant-photos"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT id, plant_name as name, disease as statusLabel, severity as status, confidence, diagnosis, recommendations as recommendation, urgency, source, created_at, show_on_site\nFROM diagnoses\nWHERE show_on_site = 1\nORDER BY created_at DESC\nLIMIT 20",
+        "options": {}
+      },
+      "id": "sqlite-select",
+      "name": "Получить из SQLite",
+      "type": "n8n-nodes-base.sqlite",
+      "typeVersion": 1,
+      "position": [460, 560],
+      "credentials": {
+        "sqlite": {
+          "id": "sqlite-plantdoc",
+          "name": "PlantDoc DB"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Форматируем список для карусели сайта\nconst rows = $input.all();\n\nconst result = rows.map(row => {\n  const d = row.json;\n  const dateStr = new Date(d.created_at || Date.now())\n    .toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });\n  \n  return {\n    id: d.id,\n    name: d.name || 'Растение',\n    plant_name: d.name || 'Растение',\n    statusLabel: d.statusLabel || d.disease || 'Анализ',\n    disease: d.statusLabel || 'Анализ',\n    status: d.status || d.severity || 'warn',\n    severity: d.status || 'warn',\n    confidence: d.confidence || 0,\n    diagnosis: d.diagnosis || '',\n    diagnosis_text: d.diagnosis || '',\n    recommendation: d.recommendation || '',\n    recommendations: d.recommendation || '',\n    urgency: d.urgency || '',\n    date: dateStr,\n    img: `/plant-doctor/placeholder.svg`,\n    img_url: `/plant-doctor/placeholder.svg`,\n    source: d.source || 'website'\n  };\n});\n\nreturn [{ json: result }];"
+      },
+      "id": "code-format",
+      "name": "Форматировать список",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [680, 560]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "id": "respond-photos",
+      "name": "Вернуть список",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [900, 560]
+    },
+    {
+      "parameters": {
+        "httpMethod": "OPTIONS",
+        "path": "plant-analyze",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-cors",
+      "name": "CORS preflight",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 460],
+      "webhookId": "plant-analyze-cors"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "",
+        "options": {
+          "responseCode": 204,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Access-Control-Allow-Origin", "value": "*" },
+              { "name": "Access-Control-Allow-Methods", "value": "POST, GET, OPTIONS" },
+              { "name": "Access-Control-Allow-Headers", "value": "Content-Type" }
+            ]
+          }
+        }
+      },
+      "id": "respond-cors",
+      "name": "CORS ответ",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [460, 460]
+    }
+  ],
+  "connections": {
+    "Webhook — Получить фото": {
+      "main": [[{ "node": "Извлечь изображение", "type": "main", "index": 0 }]]
+    },
+    "Извлечь изображение": {
+      "main": [[{ "node": "llava-phi3 — Анализ", "type": "main", "index": 0 }]]
+    },
+    "llava-phi3 — Анализ": {
+      "main": [[{ "node": "Парсить ответ Ollama", "type": "main", "index": 0 }]]
+    },
+    "Парсить ответ Ollama": {
+      "main": [[{ "node": "Сохранить в SQLite", "type": "main", "index": 0 }]]
+    },
+    "Сохранить в SQLite": {
+      "main": [[{ "node": "Сформировать ответ", "type": "main", "index": 0 }]]
+    },
+    "Сформировать ответ": {
+      "main": [[{ "node": "Ответить сайту", "type": "main", "index": 0 }]]
+    },
+    "Webhook — Список фото": {
+      "main": [[{ "node": "Получить из SQLite", "type": "main", "index": 0 }]]
+    },
+    "Получить из SQLite": {
+      "main": [[{ "node": "Форматировать список", "type": "main", "index": 0 }]]
+    },
+    "Форматировать список": {
+      "main": [[{ "node": "Вернуть список", "type": "main", "index": 0 }]]
+    },
+    "CORS preflight": {
+      "main": [[{ "node": "CORS ответ", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": ""
+  },
+  "tags": [{ "name": "PlantDoc" }],
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "local"
+  }
+}

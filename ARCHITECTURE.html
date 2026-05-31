@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>PlantDoctor — Архитектура системы</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0A0F0A; --surface:#141F14; --surface2:#1A2A1A;
+  --border:rgba(100,200,80,.12); --border2:rgba(100,200,80,.25);
+  --green:#4CAF50; --green-bright:#6DDA52; --green-soft:rgba(76,175,80,.12);
+  --blue:#42A5F5; --blue-soft:rgba(66,165,245,.1);
+  --orange:#FF9800; --orange-soft:rgba(255,152,0,.1);
+  --red:#F44336; --red-soft:rgba(244,67,54,.1);
+  --purple:#AB47BC; --purple-soft:rgba(171,71,188,.1);
+  --text:#E8F5E9; --text-mid:#A5C8A0; --text-dim:#4A7045;
+  --r:12px; --max:1400px;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;line-height:1.6;padding:40px 20px;-webkit-font-smoothing:antialiased}
+.wrap{max-width:var(--max);margin:0 auto}
+
+h1{font-size:2rem;font-weight:700;color:var(--text);margin-bottom:8px}
+h2{font-size:1.2rem;font-weight:600;color:var(--green-bright);margin-bottom:20px;display:flex;align-items:center;gap:10px}
+h3{font-size:.9rem;font-weight:600;color:var(--text-mid);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+p{font-size:.9rem;color:var(--text-mid);line-height:1.5}
+.subtitle{color:var(--text-mid);font-size:1rem;margin-bottom:40px}
+
+.section{margin-bottom:60px}
+
+/* ── FLOW DIAGRAM ── */
+.flow{display:flex;align-items:center;flex-wrap:wrap;gap:0}
+.flow-node{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);
+  padding:14px 18px;min-width:160px;text-align:center;position:relative;flex-shrink:0;
+}
+.flow-node .icon{font-size:1.6rem;margin-bottom:6px}
+.flow-node .label{font-size:.8rem;font-weight:600;color:var(--text)}
+.flow-node .sublabel{font-size:.72rem;color:var(--text-dim);margin-top:2px}
+.flow-arrow{
+  font-size:1.2rem;color:var(--text-dim);padding:0 8px;flex-shrink:0;
+}
+.flow-arrow.down{transform:rotate(90deg)}
+
+.node-tg{border-color:rgba(0,136,204,.4);background:rgba(0,136,204,.08)}
+.node-n8n{border-color:rgba(255,105,0,.4);background:rgba(255,105,0,.08)}
+.node-ai{border-color:rgba(171,71,188,.4);background:rgba(171,71,188,.08)}
+.node-db{border-color:rgba(66,165,245,.4);background:rgba(66,165,245,.08)}
+.node-web{border-color:var(--border2);background:var(--green-soft)}
+.node-crm{border-color:rgba(255,152,0,.4);background:rgba(255,152,0,.08)}
+
+/* ── GRID DIAGRAM ── */
+.arch-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  position:relative;
+}
+
+.arch-block{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:20px;position:relative;overflow:hidden;
+}
+.arch-block::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+}
+.ab-tg::before{background:linear-gradient(90deg,#0088cc,#00a8e8)}
+.ab-n8n::before{background:linear-gradient(90deg,#ff6900,#ff9500)}
+.ab-ai::before{background:linear-gradient(90deg,#7B1FA2,#CE93D8)}
+.ab-db::before{background:linear-gradient(90deg,#1565C0,#42A5F5)}
+.ab-web::before{background:linear-gradient(90deg,#2E7D32,#66BB6A)}
+.ab-notif::before{background:linear-gradient(90deg,#E65100,#FFA726)}
+
+.arch-block .block-icon{font-size:1.8rem;margin-bottom:10px}
+.arch-block h3{font-size:.95rem;font-weight:700;color:var(--text);margin-bottom:6px;text-transform:none;letter-spacing:0}
+.arch-block p{font-size:.8rem;color:var(--text-mid)}
+
+.tag{
+  display:inline-block;padding:3px 10px;border-radius:50px;
+  font-size:.7rem;font-weight:600;margin:2px;
+}
+.tag-tg{background:rgba(0,136,204,.2);color:#42A5F5;border:1px solid rgba(0,136,204,.3)}
+.tag-n8n{background:rgba(255,105,0,.2);color:#FF9800;border:1px solid rgba(255,105,0,.3)}
+.tag-ai{background:rgba(171,71,188,.2);color:#CE93D8;border:1px solid rgba(171,71,188,.3)}
+.tag-db{background:rgba(66,165,245,.2);color:#90CAF9;border:1px solid rgba(66,165,245,.3)}
+.tag-web{background:var(--green-soft);color:var(--green-bright);border:1px solid var(--border2)}
+.tag-ok{background:rgba(76,175,80,.2);color:#81C784;border:1px solid rgba(76,175,80,.3)}
+.tag-warn{background:rgba(255,152,0,.2);color:#FFB74D;border:1px solid rgba(255,152,0,.3)}
+.tag-red{background:rgba(244,67,54,.2);color:#EF9A9A;border:1px solid rgba(244,67,54,.3)}
+
+/* ── DB SCHEMA ── */
+.db-tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.db-table{
+  background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);overflow:hidden;
+}
+.db-table-head{
+  background:rgba(66,165,245,.1);border-bottom:1px solid var(--border2);
+  padding:12px 16px;font-size:.9rem;font-weight:700;color:var(--blue);
+  display:flex;align-items:center;gap:8px;
+}
+.db-row{
+  padding:10px 16px;border-bottom:1px solid var(--border);
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  font-size:.8rem;
+}
+.db-row:last-child{border-bottom:none}
+.db-col{color:var(--text)}
+.db-type{color:var(--blue);font-family:'JetBrains Mono',monospace;font-size:.75rem}
+.db-note{color:var(--text-dim);font-size:.72rem}
+.db-pk{color:var(--orange);font-size:.65rem;font-weight:700;padding:1px 5px;background:var(--orange-soft);border-radius:3px}
+.db-fk{color:var(--purple);font-size:.65rem;font-weight:700;padding:1px 5px;background:var(--purple-soft);border-radius:3px}
+
+/* ── WORKFLOW STEPS ── */
+.wf-list{display:flex;flex-direction:column;gap:12px}
+.wf-step{
+  display:flex;gap:16px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px;
+}
+.wf-num{
+  width:32px;height:32px;border-radius:50%;background:var(--green-soft);border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;
+  color:var(--green-bright);flex-shrink:0;
+}
+.wf-content{}
+.wf-title{font-size:.9rem;font-weight:600;color:var(--text);margin-bottom:4px}
+.wf-desc{font-size:.8rem;color:var(--text-mid);line-height:1.4}
+.wf-node{font-size:.72rem;font-family:'JetBrains Mono',monospace;color:var(--text-dim);margin-top:4px}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:768px){.two-col{grid-template-columns:1fr}.arch-grid{grid-template-columns:1fr}.flow{flex-direction:column}}
+
+/* ── CODE BLOCK ── */
+pre{
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;font-family:'JetBrains Mono',monospace;font-size:.78rem;
+  color:var(--text-mid);overflow-x:auto;line-height:1.6;
+}
+.key{color:#CE93D8}.val{color:#81C784}.str{color:#FFE082}.num{color:#90CAF9}.comment{color:var(--text-dim)}
+
+/* ── HEADER ── */
+.page-header{
+  background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+  padding:28px 32px;margin-bottom:48px;
+  display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+}
+.header-icon{font-size:3rem}
+.header-text h1{margin-bottom:4px}
+.breadcrumb{font-size:.8rem;color:var(--text-dim);margin-bottom:8px}
+.ver-tag{display:inline-block;padding:3px 10px;background:var(--green-soft);border:1px solid var(--border2);border-radius:50px;font-size:.72rem;color:var(--green-bright)}
+
+.divider{height:1px;background:var(--border);margin:40px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- HEADER -->
+<div class="page-header">
+  <div class="header-icon">🌿</div>
+  <div class="header-text">
+    <div class="breadcrumb">PlantDoctor System</div>
+    <h1>Архитектура системы</h1>
+    <p style="margin-top:6px">Telegram Bot · n8n Workflows · GPT-4 Vision · SQLite · Website</p>
+    <span class="ver-tag">v1.0 · Май 2026</span>
+  </div>
+</div>
+
+<!-- ═══ 1. ОБЩАЯ СХЕМА ПОТОКОВ ═══ -->
+<div class="section">
+  <h2>📊 Поток данных — от фото до сайта</h2>
+
+  <!-- ПОТОК 1: через Telegram -->
+  <h3 style="margin-bottom:12px">Поток A — Telegram-бот</h3>
+  <div class="flow" style="margin-bottom:24px;flex-wrap:wrap;gap:4px">
+    <div class="flow-node node-tg"><div class="icon">📱</div><div class="label">Пользователь</div><div class="sublabel">Telegram</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-tg"><div class="icon">🤖</div><div class="label">Telegram Bot</div><div class="sublabel">@PlantDoctorBot</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-n8n"><div class="icon">⚡</div><div class="label">n8n Webhook</div><div class="sublabel">Получить фото</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-n8n"><div class="icon">💾</div><div class="label">n8n: Сохранить</div><div class="sublabel">Диск + SQLite</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">GPT-4 Vision</div><div class="sublabel">Анализ болезни</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">Запись в БД</div><div class="sublabel">Диагноз + фото</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-tg"><div class="icon">💬</div><div class="label">Ответ боту</div><div class="sublabel">Диагноз → юзер</div></div>
+  </div>
+
+  <!-- ПОТОК 2: через сайт -->
+  <h3 style="margin-bottom:12px">Поток B — Сайт (параллельно)</h3>
+  <div class="flow" style="margin-bottom:24px;flex-wrap:wrap;gap:4px">
+    <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">SQLite DB</div><div class="sublabel">diagnoses</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-n8n"><div class="icon">🔌</div><div class="label">n8n API</div><div class="sublabel">GET /plant-photos</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-web"><div class="icon">🌐</div><div class="label">Сайт (JS fetch)</div><div class="sublabel">каждые 30 сек</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-web"><div class="icon">🎠</div><div class="label">Карусель</div><div class="sublabel">auto-update</div></div>
+  </div>
+
+  <!-- ПОТОК 3: сайт → загрузка -->
+  <h3 style="margin-bottom:12px">Поток C — Загрузка с сайта</h3>
+  <div class="flow" style="flex-wrap:wrap;gap:4px">
+    <div class="flow-node node-web"><div class="icon">🖥️</div><div class="label">Сайт</div><div class="sublabel">Drag & Drop</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-n8n"><div class="icon">⚡</div><div class="label">POST /plant-upload</div><div class="sublabel">n8n Webhook</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-n8n"><div class="icon">🔀</div><div class="label">Тот же воркфлоу</div><div class="sublabel">что и Telegram</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-ai"><div class="icon">🧠</div><div class="label">GPT-4 Vision</div><div class="sublabel">Анализ</div></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">БД + сайт</div><div class="sublabel">Обновление</div></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ 2. БЛОКИ СИСТЕМЫ ═══ -->
+<div class="section">
+  <h2>🏗️ Компоненты системы</h2>
+  <div class="arch-grid">
+
+    <div class="arch-block ab-tg">
+      <div class="block-icon">🤖</div>
+      <h3>Telegram Bot</h3>
+      <p>Принимает фото, задаёт уточняющие вопросы, отправляет готовый диагноз обратно пользователю.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-tg">Bot API</span>
+        <span class="tag tag-n8n">n8n Trigger</span>
+        <span class="tag tag-ok">Polling / Webhook</span>
+      </div>
+    </div>
+
+    <div class="arch-block ab-n8n">
+      <div class="block-icon">⚡</div>
+      <h3>n8n Workflows</h3>
+      <p>Мозг системы. 3 воркфлоу: получение фото, API для сайта, уведомления. Без написания кода.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-n8n">WF-1: Анализ фото</span>
+        <span class="tag tag-n8n">WF-2: API</span>
+        <span class="tag tag-n8n">WF-3: Уведомления</span>
+      </div>
+    </div>
+
+    <div class="arch-block ab-ai">
+      <div class="block-icon">🧠</div>
+      <h3>GPT-4 Vision</h3>
+      <p>Анализирует фото растений. Определяет вид, болезнь, серьёзность, даёт рекомендации.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-ai">OpenAI API</span>
+        <span class="tag tag-ai">Vision model</span>
+        <span class="tag tag-ok">94% точность</span>
+      </div>
+    </div>
+
+    <div class="arch-block ab-db">
+      <div class="block-icon">🗄️</div>
+      <h3>База данных (SQLite)</h3>
+      <p>Хранит все диагнозы, фото-пути, пользователей. Лёгкая, встроена в n8n, не требует сервера.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-db">SQLite node</span>
+        <span class="tag tag-db">plants · diagnoses · users</span>
+      </div>
+    </div>
+
+    <div class="arch-block ab-web">
+      <div class="block-icon">🌐</div>
+      <h3>Сайт PlantDoctor</h3>
+      <p>Статический HTML. Тянет данные из n8n API. Карусель обновляется каждые 30 секунд автоматически.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-web">HTML + JS</span>
+        <span class="tag tag-web">fetch() API</span>
+        <span class="tag tag-ok">Netlify / GitHub Pages</span>
+      </div>
+    </div>
+
+    <div class="arch-block ab-notif">
+      <div class="block-icon">🔔</div>
+      <h3>Уведомления</h3>
+      <p>При критическом диагнозе — пуш в Telegram-канал администратора. Можно добавить email.</p>
+      <div style="margin-top:12px">
+        <span class="tag tag-n8n">IF-нода</span>
+        <span class="tag tag-tg">Telegram notify</span>
+        <span class="tag tag-warn">Критические случаи</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ 3. n8n ВОРКФЛОУ ═══ -->
+<div class="section">
+  <h2>⚡ Воркфлоу в n8n — пошагово</h2>
+  <div class="two-col">
+
+    <!-- WF-1 -->
+    <div>
+      <h3 style="margin-bottom:16px;color:var(--orange)">WF-1 · Анализ фото (основной)</h3>
+      <div class="wf-list">
+        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Telegram Trigger</div><div class="wf-desc">Слушает входящие сообщения с фото от пользователей бота.</div><div class="wf-node">Нода: Telegram Trigger → тип: message</div></div></div>
+        <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">Получить файл</div><div class="wf-desc">Скачать фото с серверов Telegram через getFile API.</div><div class="wf-node">Нода: HTTP Request → GET Telegram file</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Сохранить на диск</div><div class="wf-desc">Записать фото в папку /uploads/plants/ с именем {timestamp}_{userId}.jpg</div><div class="wf-node">Нода: Write Binary File</div></div></div>
+        <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">GPT-4 Vision анализ</div><div class="wf-desc">Отправить фото в OpenAI с системным промптом диагностики.</div><div class="wf-node">Нода: OpenAI → model: gpt-4o</div></div></div>
+        <div class="wf-step"><div class="wf-num">5</div><div class="wf-content"><div class="wf-title">Парсить JSON ответ</div><div class="wf-desc">Извлечь: plant_name, disease, severity, confidence, recommendations.</div><div class="wf-node">Нода: Set → JSON parse</div></div></div>
+        <div class="wf-step"><div class="wf-num">6</div><div class="wf-content"><div class="wf-title">Сохранить в SQLite</div><div class="wf-desc">INSERT в таблицы diagnoses + plants. Связать с user_id.</div><div class="wf-node">Нода: SQLite → INSERT</div></div></div>
+        <div class="wf-step"><div class="wf-num">7</div><div class="wf-content"><div class="wf-title">Ответить пользователю</div><div class="wf-desc">Отправить отформатированный диагноз обратно в Telegram.</div><div class="wf-node">Нода: Telegram → sendMessage</div></div></div>
+        <div class="wf-step"><div class="wf-num">8</div><div class="wf-content"><div class="wf-title">IF: критический диагноз?</div><div class="wf-desc">Если severity = critical → уведомить администратора.</div><div class="wf-node">Нода: IF → Telegram admin notify</div></div></div>
+      </div>
+    </div>
+
+    <!-- WF-2 + WF-3 -->
+    <div>
+      <h3 style="margin-bottom:16px;color:var(--blue)">WF-2 · API для сайта</h3>
+      <div class="wf-list" style="margin-bottom:28px">
+        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook GET /plant-photos</div><div class="wf-desc">Сайт делает запрос каждые 30 секунд.</div><div class="wf-node">Нода: Webhook → GET method</div></div></div>
+        <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">SELECT из SQLite</div><div class="wf-desc">Последние 20 диагнозов, сортировка по дате DESC.</div><div class="wf-node">Нода: SQLite → SELECT * FROM diagnoses ORDER BY created_at DESC LIMIT 20</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Форматировать ответ</div><div class="wf-desc">Собрать JSON с полями: id, img_url, name, status, diagnosis…</div><div class="wf-node">Нода: Code (JS, 10 строк)</div></div></div>
+        <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">Вернуть JSON</div><div class="wf-desc">Respond to Webhook с массивом объектов.</div><div class="wf-node">Нода: Respond to Webhook</div></div></div>
+      </div>
+
+      <h3 style="margin-bottom:16px;color:var(--green-bright)">WF-3 · Загрузка с сайта</h3>
+      <div class="wf-list">
+        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook POST /plant-upload</div><div class="wf-desc">Получает multipart/form-data с файлом от сайта.</div><div class="wf-node">Нода: Webhook → POST, Binary Data ON</div></div></div>
+        <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">→ WF-1 (тот же путь)</div><div class="wf-desc">Передать файл в основной воркфлоу с флагом source: "website".</div><div class="wf-node">Нода: Execute Workflow → WF-1</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Ответить сайту</div><div class="wf-desc">{ status: "analyzing", id: "..." } — сайт покажет спиннер.</div><div class="wf-node">Нода: Respond to Webhook</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ 4. БД СХЕМА ═══ -->
+<div class="section">
+  <h2>🗄️ Схема базы данных (SQLite)</h2>
+  <div class="db-tables">
+
+    <div class="db-table">
+      <div class="db-table-head">📋 diagnoses <span style="font-size:.75rem;color:var(--text-dim);font-weight:400">(главная таблица)</span></div>
+      <div class="db-row" style="background:rgba(255,255,255,.03);font-size:.72rem;color:var(--text-dim)"><span>Поле</span><span>Тип</span><span>Примечание</span></div>
+      <div class="db-row"><span class="db-col">id</span><span class="db-type">INTEGER</span><span><span class="db-pk">PK</span> AUTO</span></div>
+      <div class="db-row"><span class="db-col">user_id</span><span class="db-type">TEXT</span><span><span class="db-fk">FK→users</span></span></div>
+      <div class="db-row"><span class="db-col">plant_name</span><span class="db-type">TEXT</span><span>GPT определил</span></div>
+      <div class="db-row"><span class="db-col">disease</span><span class="db-type">TEXT</span><span>Название болезни</span></div>
+      <div class="db-row"><span class="db-col">severity</span><span class="db-type">TEXT</span><span>ok/warn/critical</span></div>
+      <div class="db-row"><span class="db-col">confidence</span><span class="db-type">INTEGER</span><span>0–100%</span></div>
+      <div class="db-row"><span class="db-col">diagnosis_text</span><span class="db-type">TEXT</span><span>Полный диагноз</span></div>
+      <div class="db-row"><span class="db-col">recommendations</span><span class="db-type">TEXT</span><span>Что делать</span></div>
+      <div class="db-row"><span class="db-col">img_path</span><span class="db-type">TEXT</span><span>Путь к файлу</span></div>
+      <div class="db-row"><span class="db-col">img_url</span><span class="db-type">TEXT</span><span>URL для сайта</span></div>
+      <div class="db-row"><span class="db-col">source</span><span class="db-type">TEXT</span><span>telegram / website</span></div>
+      <div class="db-row"><span class="db-col">created_at</span><span class="db-type">DATETIME</span><span>Timestamp UTC</span></div>
+      <div class="db-row"><span class="db-col">show_on_site</span><span class="db-type">BOOLEAN</span><span>1 = публично</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-head">👤 users</div>
+      <div class="db-row" style="background:rgba(255,255,255,.03);font-size:.72rem;color:var(--text-dim)"><span>Поле</span><span>Тип</span><span>Примечание</span></div>
+      <div class="db-row"><span class="db-col">id</span><span class="db-type">INTEGER</span><span><span class="db-pk">PK</span></span></div>
+      <div class="db-row"><span class="db-col">telegram_id</span><span class="db-type">TEXT</span><span>Уникальный</span></div>
+      <div class="db-row"><span class="db-col">username</span><span class="db-type">TEXT</span><span>@username</span></div>
+      <div class="db-row"><span class="db-col">first_name</span><span class="db-type">TEXT</span><span></span></div>
+      <div class="db-row"><span class="db-col">total_analyses</span><span class="db-type">INTEGER</span><span>Счётчик</span></div>
+      <div class="db-row"><span class="db-col">created_at</span><span class="db-type">DATETIME</span><span>Первое обращение</span></div>
+      <div class="db-row"><span class="db-col">last_active</span><span class="db-type">DATETIME</span><span>Последнее фото</span></div>
+    </div>
+
+    <div class="db-table">
+      <div class="db-table-head">🏷️ disease_types <span style="font-size:.75rem;color:var(--text-dim);font-weight:400">(справочник)</span></div>
+      <div class="db-row" style="background:rgba(255,255,255,.03);font-size:.72rem;color:var(--text-dim)"><span>Поле</span><span>Тип</span><span>Примечание</span></div>
+      <div class="db-row"><span class="db-col">id</span><span class="db-type">INTEGER</span><span><span class="db-pk">PK</span></span></div>
+      <div class="db-row"><span class="db-col">name_ru</span><span class="db-type">TEXT</span><span>Хлороз</span></div>
+      <div class="db-row"><span class="db-col">name_en</span><span class="db-type">TEXT</span><span>Chlorosis</span></div>
+      <div class="db-row"><span class="db-col">category</span><span class="db-type">TEXT</span><span>fungal/pest/nutrient</span></div>
+      <div class="db-row"><span class="db-col">affected_plants</span><span class="db-type">TEXT</span><span>JSON array</span></div>
+      <div class="db-row"><span class="db-col">icon</span><span class="db-type">TEXT</span><span>Emoji</span></div>
+      <div class="db-row"><span class="db-col">count</span><span class="db-type">INTEGER</span><span>Сколько раз найдено</span></div>
+    </div>
+
+  </div>
+
+  <!-- SQL для создания -->
+  <div style="margin-top:24px">
+    <h3 style="margin-bottom:12px">SQL для создания таблиц (вставь в n8n SQLite Execute)</h3>
+    <pre><span class="comment">-- Выполни один раз при первом запуске</span>
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  telegram_id TEXT UNIQUE,
+  username TEXT,
+  first_name TEXT,
+  total_analyses INTEGER DEFAULT 0,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  last_active DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS diagnoses (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  plant_name TEXT,
+  disease TEXT,
+  severity TEXT DEFAULT <span class="str">'ok'</span>,
+  confidence INTEGER DEFAULT <span class="num">0</span>,
+  diagnosis_text TEXT,
+  recommendations TEXT,
+  img_path TEXT,
+  img_url TEXT,
+  source TEXT DEFAULT <span class="str">'telegram'</span>,
+  show_on_site BOOLEAN DEFAULT <span class="num">1</span>,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);</pre>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ 5. ФОРМАТ JSON API ═══ -->
+<div class="section">
+  <h2>🔌 JSON формат между n8n и сайтом</h2>
+  <div class="two-col">
+    <div>
+      <h3 style="margin-bottom:12px">GET /plant-photos → ответ n8n</h3>
+      <pre>[
+  {
+    <span class="key">"id"</span>: <span class="num">42</span>,
+    <span class="key">"img"</span>: <span class="str">"http://localhost:5678/files/plant-42.jpg"</span>,
+    <span class="key">"name"</span>: <span class="str">"Monstera deliciosa"</span>,
+    <span class="key">"status"</span>: <span class="str">"warn"</span>,
+    <span class="key">"statusLabel"</span>: <span class="str">"Хлороз"</span>,
+    <span class="key">"diagnosis"</span>: <span class="str">"Обнаружен хлороз..."</span>,
+    <span class="key">"recommendation"</span>: <span class="str">"Добавить хелат железа..."</span>,
+    <span class="key">"severity"</span>: <span class="str">"Умеренная"</span>,
+    <span class="key">"confidence"</span>: <span class="num">91</span>,
+    <span class="key">"date"</span>: <span class="str">"31.05.2026 · 14:22"</span>,
+    <span class="key">"user"</span>: <span class="str">"@username"</span>
+  }
+]</pre>
+    </div>
+    <div>
+      <h3 style="margin-bottom:12px">POST /plant-upload → что шлёт сайт</h3>
+      <pre><span class="comment">// multipart/form-data</span>
+photo: [binary file]
+source: <span class="str">"website"</span>
+timestamp: <span class="str">"2026-05-31T14:22:00Z"</span>
+
+<span class="comment">// Ответ n8n:</span>
+{
+  <span class="key">"status"</span>: <span class="str">"analyzing"</span>,
+  <span class="key">"id"</span>: <span class="str">"tmp_1717156920"</span>,
+  <span class="key">"message"</span>: <span class="str">"Анализируем, результат через 5–10 сек"</span>
+}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══ ИТОГО ═══ -->
+<div class="section">
+  <h2>✅ Чеклист запуска</h2>
+  <div class="wf-list">
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Создать бота в @BotFather, получить TOKEN</div><div class="wf-desc">Записать в n8n → Credentials → Telegram API</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Получить OpenAI API ключ (нужен GPT-4o)</div><div class="wf-desc">Записать в n8n → Credentials → OpenAI</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Создать 3 воркфлоу в n8n по схеме выше</div><div class="wf-desc">WF-1: Анализ · WF-2: API · WF-3: Загрузка с сайта</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Выполнить SQL CREATE TABLE в n8n SQLite</div><div class="wf-desc">Один раз при первом запуске</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Вставить системный промпт в OpenAI ноду</div><div class="wf-desc">Из файла PLANT_BOT_PROMPT.md</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Обновить API_BASE в index.html</div><div class="wf-desc">Вставить URL твоего n8n вместо localhost:5678</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Задеплоить сайт на Netlify / GitHub Pages</div><div class="wf-desc">Перетащить папку plant-doctor в netlify.com/drop</div></div></div>
+    <div class="wf-step"><div class="wf-num">□</div><div class="wf-content"><div class="wf-title">Обновить ссылку на бот в nav и hero сайта</div><div class="wf-desc">Заменить t.me/your_plant_bot на реальный username</div></div></div>
+  </div>
+</div>
+
+</div>
+</body>
+</html>
