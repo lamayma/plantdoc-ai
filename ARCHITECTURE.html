@@ -195,7 +195,7 @@ pre{
   <div class="flow" style="margin-bottom:24px;flex-wrap:wrap;gap:4px">
     <div class="flow-node node-db"><div class="icon">🗄️</div><div class="label">SQLite DB</div><div class="sublabel">diagnoses</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-node node-n8n"><div class="icon">🔌</div><div class="label">n8n API</div><div class="sublabel">GET /plant-photos</div></div>
+    <div class="flow-node node-n8n"><div class="icon">🔌</div><div class="label">n8n API</div><div class="sublabel">GET /diagnoses</div></div>
     <div class="flow-arrow">→</div>
     <div class="flow-node node-web"><div class="icon">🌐</div><div class="label">Сайт (JS fetch)</div><div class="sublabel">каждые 30 сек</div></div>
     <div class="flow-arrow">→</div>
@@ -207,7 +207,7 @@ pre{
   <div class="flow" style="flex-wrap:wrap;gap:4px">
     <div class="flow-node node-web"><div class="icon">🖥️</div><div class="label">Сайт</div><div class="sublabel">Drag & Drop</div></div>
     <div class="flow-arrow">→</div>
-    <div class="flow-node node-n8n"><div class="icon">⚡</div><div class="label">POST /plant-upload</div><div class="sublabel">n8n Webhook</div></div>
+    <div class="flow-node node-n8n"><div class="icon">⚡</div><div class="label">POST /plant-analyze</div><div class="sublabel">n8n Webhook</div></div>
     <div class="flow-arrow">→</div>
     <div class="flow-node node-n8n"><div class="icon">🔀</div><div class="label">Тот же воркфлоу</div><div class="sublabel">что и Telegram</div></div>
     <div class="flow-arrow">→</div>
@@ -305,10 +305,10 @@ pre{
       <div class="wf-list">
         <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Telegram Trigger</div><div class="wf-desc">Слушает входящие сообщения с фото от пользователей бота.</div><div class="wf-node">Нода: Telegram Trigger → тип: message</div></div></div>
         <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">Получить файл</div><div class="wf-desc">Скачать фото с серверов Telegram через getFile API.</div><div class="wf-node">Нода: HTTP Request → GET Telegram file</div></div></div>
-        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Сохранить на диск</div><div class="wf-desc">Записать фото в папку /uploads/plants/ с именем {timestamp}_{userId}.jpg</div><div class="wf-node">Нода: Write Binary File</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Сохранить в хранилище</div><div class="wf-desc">Записать результат анализа и метаданные в локальную базу.</div><div class="wf-node">Нода: SQLite / File Storage</div></div></div>
         <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">GPT-4 Vision анализ</div><div class="wf-desc">Отправить фото в OpenAI с системным промптом диагностики.</div><div class="wf-node">Нода: OpenAI → model: gpt-4o</div></div></div>
-        <div class="wf-step"><div class="wf-num">5</div><div class="wf-content"><div class="wf-title">Парсить JSON ответ</div><div class="wf-desc">Извлечь: plant_name, disease, severity, confidence, recommendations.</div><div class="wf-node">Нода: Set → JSON parse</div></div></div>
-        <div class="wf-step"><div class="wf-num">6</div><div class="wf-content"><div class="wf-title">Сохранить в SQLite</div><div class="wf-desc">INSERT в таблицы diagnoses + plants. Связать с user_id.</div><div class="wf-node">Нода: SQLite → INSERT</div></div></div>
+        <div class="wf-step"><div class="wf-num">5</div><div class="wf-content"><div class="wf-title">Парсить текстовый ответ</div><div class="wf-desc">Извлечь: plant_name, disease, severity, confidence, recommendations.</div><div class="wf-node">Нода: Set → text parse</div></div></div>
+        <div class="wf-step"><div class="wf-num">6</div><div class="wf-content"><div class="wf-title">Сохранить в SQLite</div><div class="wf-desc">INSERT в таблицу diagnoses с source и show_on_site.</div><div class="wf-node">Нода: SQLite → INSERT</div></div></div>
         <div class="wf-step"><div class="wf-num">7</div><div class="wf-content"><div class="wf-title">Ответить пользователю</div><div class="wf-desc">Отправить отформатированный диагноз обратно в Telegram.</div><div class="wf-node">Нода: Telegram → sendMessage</div></div></div>
         <div class="wf-step"><div class="wf-num">8</div><div class="wf-content"><div class="wf-title">IF: критический диагноз?</div><div class="wf-desc">Если severity = critical → уведомить администратора.</div><div class="wf-node">Нода: IF → Telegram admin notify</div></div></div>
       </div>
@@ -316,19 +316,19 @@ pre{
 
     <!-- WF-2 + WF-3 -->
     <div>
-      <h3 style="margin-bottom:16px;color:var(--blue)">WF-2 · API для сайта</h3>
+      <h3 style="margin-bottom:16px;color:var(--blue)">WF-2 · История диагнозов</h3>
       <div class="wf-list" style="margin-bottom:28px">
-        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook GET /plant-photos</div><div class="wf-desc">Сайт делает запрос каждые 30 секунд.</div><div class="wf-node">Нода: Webhook → GET method</div></div></div>
+        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook GET /diagnoses</div><div class="wf-desc">Клиент получает свежие диагнозы и статусы системы.</div><div class="wf-node">Нода: Webhook → GET method</div></div></div>
         <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">SELECT из SQLite</div><div class="wf-desc">Последние 20 диагнозов, сортировка по дате DESC.</div><div class="wf-node">Нода: SQLite → SELECT * FROM diagnoses ORDER BY created_at DESC LIMIT 20</div></div></div>
         <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Форматировать ответ</div><div class="wf-desc">Собрать JSON с полями: id, img_url, name, status, diagnosis…</div><div class="wf-node">Нода: Code (JS, 10 строк)</div></div></div>
         <div class="wf-step"><div class="wf-num">4</div><div class="wf-content"><div class="wf-title">Вернуть JSON</div><div class="wf-desc">Respond to Webhook с массивом объектов.</div><div class="wf-node">Нода: Respond to Webhook</div></div></div>
       </div>
 
-      <h3 style="margin-bottom:16px;color:var(--green-bright)">WF-3 · Загрузка с сайта</h3>
+      <h3 style="margin-bottom:16px;color:var(--green-bright)">WF-3 · Локальный анализ фото</h3>
       <div class="wf-list">
-        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook POST /plant-upload</div><div class="wf-desc">Получает multipart/form-data с файлом от сайта.</div><div class="wf-node">Нода: Webhook → POST, Binary Data ON</div></div></div>
-        <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">→ WF-1 (тот же путь)</div><div class="wf-desc">Передать файл в основной воркфлоу с флагом source: "website".</div><div class="wf-node">Нода: Execute Workflow → WF-1</div></div></div>
-        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">Ответить сайту</div><div class="wf-desc">{ status: "analyzing", id: "..." } — сайт покажет спиннер.</div><div class="wf-node">Нода: Respond to Webhook</div></div></div>
+        <div class="wf-step"><div class="wf-num">1</div><div class="wf-content"><div class="wf-title">Webhook POST /plant-analyze</div><div class="wf-desc">Получает фото как base64 или binary payload.</div><div class="wf-node">Нода: Webhook → POST</div></div></div>
+        <div class="wf-step"><div class="wf-num">2</div><div class="wf-content"><div class="wf-title">Извлечь изображение</div><div class="wf-desc">Нормализовать вход и подготовить payload для Ollama.</div><div class="wf-node">Нода: Code</div></div></div>
+        <div class="wf-step"><div class="wf-num">3</div><div class="wf-content"><div class="wf-title">llava-phi3 анализ</div><div class="wf-desc">Локальная модель отвечает текстовым диагнозом с полями.</div><div class="wf-node">Нода: HTTP Request → localhost:11434</div></div></div>
       </div>
     </div>
   </div>
@@ -425,7 +425,7 @@ CREATE TABLE IF NOT EXISTS diagnoses (
   <h2>🔌 JSON формат между n8n и сайтом</h2>
   <div class="two-col">
     <div>
-      <h3 style="margin-bottom:12px">GET /plant-photos → ответ n8n</h3>
+      <h3 style="margin-bottom:12px">GET /diagnoses → ответ n8n</h3>
       <pre>[
   {
     <span class="key">"id"</span>: <span class="num">42</span>,
@@ -443,7 +443,7 @@ CREATE TABLE IF NOT EXISTS diagnoses (
 ]</pre>
     </div>
     <div>
-      <h3 style="margin-bottom:12px">POST /plant-upload → что шлёт сайт</h3>
+      <h3 style="margin-bottom:12px">POST /plant-analyze → что шлёт клиент</h3>
       <pre><span class="comment">// multipart/form-data</span>
 photo: [binary file]
 source: <span class="str">"website"</span>
