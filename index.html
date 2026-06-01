@@ -880,14 +880,8 @@
 
   <script>
     const ANALYZE_URL = 'https://c5ee7fb506dcfb.lhr.life/api/generate';
-    const MODEL = 'moondream';
-    const PROMPT = [
-      'You are a plant care assistant.',
-      'Look at the photo and describe the visible condition in one short paragraph.',
-      'Use simple words and be honest if the plant looks fine.',
-      'Mention one likely issue if you see stress, yellowing, drooping, spots, pests, mold, or dryness.',
-      'Do not use JSON or bullet points.'
-    ].join(' ');
+    const MODEL = 'qwen2.5vl:3b';
+    const PROMPT = 'You are a plant diagnosis assistant. Look closely at the photo. Choose one category only: healthy, fungal, bacterial, viral, pest, nutrient, watering, environmental, unknown. Do not use stress unless the issue is clearly sun, heat, cold, draft, or drought. If unsure, choose unknown. Reply with 4 short lines: PLANT:, CATEGORY:, SIGNS:, ADVICE:. No bullets, no JSON.';
 
     const el = {
       fileInput: document.getElementById('fileInput'),
@@ -939,7 +933,7 @@
       ['pest', ['клещ', 'тля', 'вредител', 'насеком', 'паути']],
       ['nutrient', ['хлороз', 'дефицит', 'желез', 'магни', 'азот', 'калий', 'питани']],
       ['watering', ['перелив', 'недолив', 'полив', 'корн', 'влага']],
-      ['environmental', ['ожог', 'солнц', 'жара', 'холод', 'стресс', 'температур']]
+      ['environmental', ['ожог', 'солнц', 'жара', 'холод', 'сквозняк', 'температур', 'дожд', 'засух']]
     ];
 
     const classifyCategory = (data) => {
@@ -974,7 +968,7 @@
       nutrient: 'Похоже на дефицит питания: лист теряет цвет или желтеет.',
       watering: 'Похоже на проблему с поливом или корнями.',
       environmental: 'Похоже на стресс от света, температуры или сухого воздуха.',
-      unknown: 'По фото видно стресс, но точнее лучше проверить другим снимком.'
+      unknown: 'По фото не хватает признаков, чтобы уверенно назвать болезнь.'
     };
 
     const translateRaw = (text, category) => {
@@ -994,10 +988,10 @@
       if (category === 'pest' || /insect|pest|bug|mite|aphid|holes|chewed/.test(lower)) {
         return 'Похоже, растение повреждают вредители.';
       }
-      if (category === 'environmental' || /sun|sunlight|heat|cold|burn|scorch|stress|draft/.test(lower)) {
+      if (category === 'environmental' || /sun|sunlight|heat|cold|burn|scorch|draft|drought|dry air|temperature/.test(lower)) {
         return 'Растение похоже на стресс от света, температуры или воздуха.';
       }
-      return text ? 'На фото видно стресс, но точнее лучше сравнить с другим снимком.' : SUMMARY_BY_CATEGORY.unknown;
+      return SUMMARY_BY_CATEGORY.unknown;
     };
 
     const makeSeverity = (text, category) => {
@@ -1112,7 +1106,27 @@
 
     const parseTextResponse = (raw) => {
       const clean = raw.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
-      const labels = new Set(['РАСТЕНИЕ', 'ПРОБЛЕМА', 'КАТЕГОРИЯ', 'СЕРЬЕЗНОСТЬ', 'УВЕРЕННОСТЬ', 'ДИАГНОЗ', 'ЧТО ДЕЛАТЬ', 'СРОЧНОСТЬ']);
+      const labelMap = new Map([
+        ['РАСТЕНИЕ', 'plant'],
+        ['PLANT', 'plant'],
+        ['ПРОБЛЕМА', 'issue'],
+        ['ISSUE', 'issue'],
+        ['ПРИЧИНА', 'issue'],
+        ['КАТЕГОРИЯ', 'category'],
+        ['CATEGORY', 'category'],
+        ['ТИП', 'category'],
+        ['TYPE', 'category'],
+        ['СЕРЬЕЗНОСТЬ', 'severity'],
+        ['SEVERITY', 'severity'],
+        ['УВЕРЕННОСТЬ', 'confidence'],
+        ['CONFIDENCE', 'confidence'],
+        ['ДИАГНОЗ', 'signs'],
+        ['SIGNS', 'signs'],
+        ['ЧТО ДЕЛАТЬ', 'advice'],
+        ['ADVICE', 'advice'],
+        ['СРОЧНОСТЬ', 'urgency'],
+        ['URGENCY', 'urgency']
+      ]);
       const values = {};
       let current = null;
 
@@ -1120,9 +1134,10 @@
         const line = rawLine.trim();
         const match = line.match(/^([A-ZА-ЯЁ][A-ZА-ЯЁ\s-]{2,32})\s*:\s*(.*)$/u);
         if (match) {
-          const key = match[1].trim();
-          if (labels.has(key)) {
-            current = key;
+          const key = match[1].trim().toUpperCase();
+          const canonical = labelMap.get(key);
+          if (canonical) {
+            current = canonical;
             values[current] = match[2].trim();
             continue;
           }
@@ -1132,22 +1147,22 @@
         }
       }
 
-      const plant = values.РАСТЕНИЕ || 'Растение';
-      const problem = values.ПРОБЛЕМА || 'Не удалось определить';
-      const categoryRaw = (values.КАТЕГОРИЯ || '').toLowerCase();
-      const severityRaw = (values.СЕРЬЕЗНОСТЬ || 'warn').toLowerCase();
-      const confidenceRaw = values.УВЕРЕННОСТЬ || '';
-      const diagnosis = values.ДИАГНОЗ || clean || 'Не удалось извлечь диагноз из ответа модели.';
-      const recs = values['ЧТО ДЕЛАТЬ'] || '';
-      const urgency = values.СРОЧНОСТЬ || '';
-      const category = categoryRaw.includes('гриб') ? 'fungal'
-        : categoryRaw.includes('бактер') ? 'bacterial'
-        : categoryRaw.includes('вирус') ? 'viral'
-        : categoryRaw.includes('вредител') ? 'pest'
-        : categoryRaw.includes('пит') || categoryRaw.includes('дефиц') ? 'nutrient'
-        : categoryRaw.includes('полив') || categoryRaw.includes('корн') ? 'watering'
-        : categoryRaw.includes('стресс') || categoryRaw.includes('сред') ? 'environmental'
-        : categoryRaw.includes('здоров') ? 'healthy'
+      const plant = values.plant || 'Растение';
+      const problem = values.issue || 'Не удалось определить';
+      const categoryRaw = (values.category || '').toLowerCase();
+      const severityRaw = (values.severity || 'warn').toLowerCase();
+      const confidenceRaw = values.confidence || '';
+      const diagnosis = values.signs || clean || 'Не удалось извлечь диагноз из ответа модели.';
+      const recs = values.advice || '';
+      const urgency = values.urgency || '';
+      const category = categoryRaw.includes('fung') || categoryRaw.includes('гриб') ? 'fungal'
+        : categoryRaw.includes('bacter') || categoryRaw.includes('бактер') ? 'bacterial'
+        : categoryRaw.includes('viral') || categoryRaw.includes('virus') || categoryRaw.includes('вирус') ? 'viral'
+        : categoryRaw.includes('pest') || categoryRaw.includes('вредител') ? 'pest'
+        : categoryRaw.includes('nutr') || categoryRaw.includes('пит') || categoryRaw.includes('дефиц') ? 'nutrient'
+        : categoryRaw.includes('water') || categoryRaw.includes('полив') || categoryRaw.includes('корн') ? 'watering'
+        : categoryRaw.includes('environment') || categoryRaw.includes('сред') ? 'environmental'
+        : categoryRaw.includes('healthy') || categoryRaw.includes('здоров') ? 'healthy'
         : undefined;
 
       const severity = severityRaw.includes('ok') || severityRaw.includes('здоров') ? 'ok'
@@ -1195,7 +1210,7 @@
     };
 
     const parseModelResponse = (raw) => {
-      if (/\bРАСТЕНИЕ\s*:/i.test(raw) || /\bПРОБЛЕМА\s*:/i.test(raw)) return parseTextResponse(raw);
+      if (/\b(РАСТЕНИЕ|PLANT)\s*:/i.test(raw) || /\b(ПРОБЛЕМА|ISSUE|КАТЕГОРИЯ|CATEGORY)\s*:/i.test(raw)) return parseTextResponse(raw);
       return parsePlainResponse(raw);
     };
 
@@ -1246,7 +1261,7 @@
             stream: false,
             prompt: PROMPT,
             images: [selectedBase64],
-            options: { temperature: 0.2, num_predict: 550 }
+            options: { temperature: 0.1, num_predict: 220 }
           })
         });
 
